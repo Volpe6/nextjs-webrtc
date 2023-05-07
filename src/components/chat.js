@@ -7,12 +7,10 @@ import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { toast } from "react-toastify";
 
 function Chat() {
-    // const firstRender = useRef(true);
     const textInput = useRef(null);
     const [messages, setMessages] = useState([]);
     const receiveFiles = useRef([]);
     const sendFiles = useRef([]);
-    // const [file, setFile] = useState(null);
     
     const [localAudioStream, setLocalAudioStream] = useState(null);
     const [localVideoStream, setLocalVideoStream] = useState(null);
@@ -47,10 +45,6 @@ function Chat() {
     }, [localDisplayStream]);
 
     useEffect(() => {
-        // if(!firstRender.current) {
-        //     return;
-        // }
-        // firstRender.current = false;
         async function onDataChannelMessage(conn, content) {
             const msgStrategy = {
                 [MESSAGE_TYPES.TEXT]: (msg) => {},
@@ -118,9 +112,6 @@ function Chat() {
         function onTrack(conn, event) {
             console.log('lidando com track')
             console.log(`track`, event);
-            // if(!event) {
-            //     return;
-            // }
             const { transceiver, track, streams } = event;
             const trv = conn.peer.retriveTransceiver({displayType: DISPLAY_TYPES.DISPLAY});
             let mediaRef = transceiver.mid == trv.mid? displayRef.current: videoRef.current;
