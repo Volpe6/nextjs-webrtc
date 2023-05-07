@@ -88,48 +88,25 @@ export const ConnectionProvider = ({ children }) => {
                 data: candidate
             });
         }
-
+        
         connections.forEach(async conn => {
             conn.attachObserver({
                 id: `connection-${conn.name}`,
-                obs: async (event, conn, ...args) => {
-                    switch(event) {
-                        case 'close':
-                            onClose(conn, ...args);
-                            break;
-                        case 'error':
-                            onError(conn, ...args);
-                            break;
-                        case 'info':
-                            onInfo(conn, ...args);
-                            break;
-                        case 'datachannelclose':
-                            onDataChannelClose(conn, ...args);
-                            break;
-                        case 'connectionfailed':
-                            onConnectionFailed(conn, ...args);
-                            break;
-                        case 'retryconnection':
-                            onRetryConnection(conn, ...args);
-                            break;
-                        case 'datachannelopen':
-                            onDataChannelOpen(conn, ...args);
-                            break;
-                        case 'connectionstatechange':
-                            onConnectionStateChange(conn, ...args);
-                            break;
-                        case 'signalingstatechange':
-                            onSignalingStateChange(conn, ...args);
-                            break;
-                        case 'negotiation':
-                            onNegotiation(conn, ...args);
-                            break;
-                        case 'icecandidate':
-                            onIceCandidate(conn, ...args);
-                            break;
-                        default:
-                            console.warn('evento nao mapeado', event);
+                obs: async (event, ...args) => {
+                    const actions = {
+                        close: onClose,
+                        error: onError,
+                        info: onInfo,
+                        datachannelclose: onDataChannelClose,
+                        connectionfailed: onConnectionFailed,
+                        retryconnection: onRetryConnection,
+                        datachannelopen: onDataChannelOpen,
+                        connectionstatechange: onConnectionStateChange,
+                        signalingstatechange: onSignalingStateChange,
+                        negotiation: onNegotiation,
+                        icecandidate: onIceCandidate
                     }
+                    conn.executeActionStrategy(actions, event, ...args);
                 }
             });
             await connect({conn: conn});

@@ -9,22 +9,19 @@ function Connection({connection}) {
     useEffect(() => {
         function onClose(conn, _) {setConnectionState('desconectado');}
         function onConnectionStateChange(conn, state) {setConnectionState(state);}
-        
+        const id = `connection-contact-${connection.name}`;
         connection.attachObserver({
-            id: `connection-contact-${connection.name}`,
-            obs: async (event, conn, ...args) => {
-                switch(event) {
-                    case 'close':
-                        onClose(conn, ...args);
-                        break;
-                    case 'connectionstatechange':
-                        onConnectionStateChange(conn, ...args);
-                        break;
-                }
+            id: id,
+            obs: async (event, ...args) => {
+                const actions = {
+                    close: onClose,
+                    connectionstatechange: onConnectionStateChange
+                };
+                connection.executeActionStrategy(actions, event, ...args);
             }
         });
         return () => {
-            connection.detachObserver(`connection-contact-${connection.name}`);
+            connection.detachObserver(id);
         }
     }, [connections]);
 

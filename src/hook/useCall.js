@@ -33,21 +33,20 @@ function useCall({socket, connections, createConnection}) {
             }
             const incomingCall = new Call(user.name, content.name);
             incomingCall.attachObserver({
-                obs: async (content) => {
-                    switch(content.type) {
-                        case 'callcomplete':
-                            const success = content.data.callSuccess? 'atendida': 'não atendida';
-                            console.log(`chamada para ${content.data.target} concluída. Estado: ${success}`);
-                            if(content.data.detail) {
-                                console.log(`detalhe ${content.data.detail}`);
+                obs: async (event, ...args) => {
+                    const actions = {
+                        callcomplete: (call, data) => {
+                            const success = data.callSuccess? 'atendida': 'não atendida';
+                            console.log(`chamada para ${call.target} concluída. Estado: ${success}`);
+                            if(data.detail) {
+                                console.log(`detalhe ${data.detail}`);
                             }
-                            break;
-                        case 'end':
-                            setIncomingCalls(incomingCalls.filter(call => call.target !== content.data.target));
-                            break;
-                    }
+                        },
+                        end: (call) => setIncomingCalls(incomingCalls.filter(incomingCall => incomingCall.target !== call.target))
+                    };
+                    incomingCall.executeActionStrategy(actions, event, ...args);
                 }
-            })
+            });
             setIncomingCalls([...incomingCalls, incomingCall]);
         }
 
@@ -112,31 +111,25 @@ function useCall({socket, connections, createConnection}) {
             toast.info(`ja recebendo uma chamada de ${targetName}`);
             return;
         }
-        const call = new Call(user.name, targetName);
-        call.attachObserver({
-            obs: async (content) => {
-                switch(content.type) {
-                    case 'calling':
-                        socket.emit('call', content.data);
-                        console.log(sentCalls);
-                        break;
-                    case 'callcomplete':
-                        const success = content.data.callSuccess? 'atendida': 'não atendida';
-                        console.log(`chamada para ${content.data.target} concluída. Estado: ${success}`);
-                        if(content.data.detail) {
-                            console.log(`detalhe ${content.data.detail}`);
+        const sentCall = new Call(user.name, targetName);
+        sentCall.attachObserver({
+            obs: async (event, ...args) => {
+                const actions = {
+                    calling: (call) => socket.emit('call', {name: call.name, target: call.target}),
+                    callcomplete: (call, data) => {
+                        const success = data.callSuccess? 'atendida': 'não atendida';
+                        console.log(`chamada para ${call.target} concluída. Estado: ${success}`);
+                        if(data.detail) {
+                            console.log(`detalhe ${data.detail}`);
                         }
-                        setSentCalls(sentCalls.filter(call => call.target !== content.data.target));
-                        break;
-                    case 'end':
-                        console.log('end disparado');
-                        setSentCalls(sentCalls.filter(call => call.target !== content.data.target));
-                        break;
-                }
+                    },
+                    end: (call) => setSentCalls(sentCalls.filter(sentCall => sentCall.target !== call.target))
+                };
+                sentCall.executeActionStrategy(actions, event, ...args);
             }
-        })
-        setSentCalls([...sentCalls, call]);
-        await call.call();
+        });
+        setSentCalls([...sentCalls, sentCall]);
+        await sentCall.call();
     }
 
     const cancel = (index) => {

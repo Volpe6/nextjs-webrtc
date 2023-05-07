@@ -7,7 +7,6 @@ import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { toast } from "react-toastify";
 
 function Chat() {
-    // const firstRender = useRef(true);
     const textInput = useRef(null);
     const [messages, setMessages] = useState([]);
     const receiveFiles = useRef([]);
@@ -47,10 +46,6 @@ function Chat() {
     }, [localDisplayStream]);
 
     useEffect(() => {
-        // if(!firstRender.current) {
-        //     return;
-        // }
-        // firstRender.current = false;
         async function onDataChannelMessage(conn, content) {
             const msgStrategy = {
                 [MESSAGE_TYPES.TEXT]: (msg) => {},
@@ -146,30 +141,23 @@ function Chat() {
             videoRef.current.srcObject = null;
             displayRef.current.srcObject = null;
         }
-
+        
+        const id = `connection-chat-${conn.name}`;
         conn.attachObserver({
-            id: `connection-chat-${conn.name}`,
-            obs: async (event, conn, ...args) => {
-                switch(event) {
-                    case 'datachannelmessage':
-                        onDataChannelMessage(conn, ...args);
-                        break;
-                    case 'changeuserstream':
-                        onChangeUserStream(conn, ...args);
-                        break;
-                    case 'changedisplaystream':
-                        onChangeDisplayStream(conn, ...args);
-                        break;
-                    case 'track':
-                        onTrack(conn, ...args);
-                        break;
-                    case 'close':
-                        onClose(conn, ...args);
-                }
+            id: id,
+            obs: async (event, ...args) => {
+                const actions = {
+                    datachannelmessage: onDataChannelMessage,
+                    changeuserstream: onChangeUserStream,
+                    changedisplaystream: onChangeDisplayStream,
+                    track: onTrack,
+                    close: onClose
+                };
+                conn.executeActionStrategy(actions, event, ...args);
             }
         });
         return () => {
-            conn.detachObserver(`connection-chat-${conn.name}`);
+            conn.detachObserver(id);
         }
     }, [connections]);
 
@@ -179,7 +167,13 @@ function Chat() {
         setMessages([...conn.getMessages()]);
     }
 
-    const handleFile = async () => {
+    const handleFile = (event) => {
+        const files = event.target.files;
+        if(files.length > 1) {
+            alert('atuamente apenas um arquivo por vez');
+            event.target.value = '';
+            return;
+        }
         // const selected = await open();
         // if(!selected) {
         //     console.log('usuario nao escolheu nada');
@@ -251,10 +245,7 @@ function Chat() {
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-full">
                 Enviar
                 </button>
-                <button onClick={handleFile}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-full">
-                file
-                </button>
+                <input type="file"/>
                 <audio ref={localAudioRef} autoPlay muted></audio>
                 <video ref={localVideoRef} width={100} playsInline autoPlay muted></video>
                 <video ref={localDisplayRef} width={100} playsInline autoPlay muted></video>
