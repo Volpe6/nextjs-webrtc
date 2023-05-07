@@ -8,10 +8,10 @@ function Login() {
   const { connectSocket } = useConnection();
   const [userName, setUserName] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     singUp(userName);
-    connectSocket();
+    await connectSocket();
   }
 
   return (

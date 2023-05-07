@@ -15,8 +15,30 @@ const ConnectionContext = createContext();
 
 //TODO verificar a possibilidade de usar o server interno do next js em substituiçao do server de sinalizaçao externo
 
-
+function useSocket(url) {
+  const [socket, setSocket] = useState(null);
+  useEffect(() => {
+    fetch(url).finally(() => {
+      const socketio = io();
+      socketio.on('connect', () => {
+        console.log('connect');
+        socketio.emit('hello');
+      });
+      socketio.on('disconnect', () => {
+        console.log('disconnect');
+      });
+      setSocket(socketio);
+    });
+    // function cleanup() {
+    //   socket.disconnect();
+    // }
+    // return cleanup;
+  }, []);
+  return socket;
+}
 export const ConnectionProvider = ({ children }) => {
+
+    const a = useSocket('/api/signalingServer');
 
     const [socket, setSocket] = useState(null);
     const [connections, setConnections] = useState([]);
@@ -244,9 +266,21 @@ export const ConnectionProvider = ({ children }) => {
         console.log('polite', opts);
         socket.emit('polite', {name: user.name, target: opts.targetName});
     }
-
-    const connectSocket = () => {
+    
+    const connectSocket = async () => {
         setSocket(io('http://webrtc-signaling-server.glitch.me/'));
+        /**
+         * como escolhi usar o ser do next js tive q fazer isso: https://codedamn.com/news/nextjs/how-to-use-socket-io
+         */
+        /**
+         * socket io ta quebrado na versao atual do nextjs.
+         * Caso volte a funcionar tem um exemplo de como obter o socket no hook useSocket um exemplo comentado mais acima nesse mesmo arquivo
+         * mais um exemplo aqui: https://www.stackfive.io/work/webrtc/peer-to-peer-video-call-with-next-js-socket-io-and-native-webrtc-apis
+         * detalhes sobre o problema aqui: https://github.com/vercel/next.js/discussions/48422
+         * https://github.com/vercel/next.js/discussions/48510
+         * https://github.com/vercel/next.js/issues?q=is%3Aissue+is%3Aopen+socket+io
+         */
+        // setSocket(io('http://localhost:3000/signalingServer'));
     }
 
     const disconnectSocket = () => {
