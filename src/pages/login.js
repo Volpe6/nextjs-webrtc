@@ -11,7 +11,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     singUp(userName);
-    await connectSocket();
+    connectSocket();
   }
 
   return (

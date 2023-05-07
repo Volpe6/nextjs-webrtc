@@ -7,39 +7,16 @@ import useCall from "./useCall";
 
 const ConnectionContext = createContext();
 
+//TODO ficar verificando se o nextjs mais recente corrigiu o bug do socket io: https://github.com/vercel/next.js/discussions/48422
+
 //TODO: melhorar envio de arquivos
 //TODO: melhorar tratamento de erros
 //TODO: melhorar tratamento de erros no envio de arquivos
 
 //TODO quando a conexao fechar nao matar o chat so peer connection
 
-//TODO verificar a possibilidade de usar o server interno do next js em substituiçao do server de sinalizaçao externo
 
-function useSocket(url) {
-  const [socket, setSocket] = useState(null);
-  useEffect(() => {
-    fetch(url).finally(() => {
-      const socketio = io();
-      socketio.on('connect', () => {
-        console.log('connect');
-        socketio.emit('hello');
-      });
-      socketio.on('disconnect', () => {
-        console.log('disconnect');
-      });
-      setSocket(socketio);
-    });
-    // function cleanup() {
-    //   socket.disconnect();
-    // }
-    // return cleanup;
-  }, []);
-  return socket;
-}
 export const ConnectionProvider = ({ children }) => {
-
-    const a = useSocket('/api/signalingServer');
-
     const [socket, setSocket] = useState(null);
     const [connections, setConnections] = useState([]);
     const [currConnection, setCurrConnection] = useState(null);
@@ -268,7 +245,7 @@ export const ConnectionProvider = ({ children }) => {
     }
     
     const connectSocket = async () => {
-        setSocket(io('http://webrtc-signaling-server.glitch.me/'));
+        // setSocket(io('http://webrtc-signaling-server.glitch.me/'));
         /**
          * como escolhi usar o ser do next js tive q fazer isso: https://codedamn.com/news/nextjs/how-to-use-socket-io
          */
@@ -281,6 +258,8 @@ export const ConnectionProvider = ({ children }) => {
          * https://github.com/vercel/next.js/issues?q=is%3Aissue+is%3Aopen+socket+io
          */
         // setSocket(io('http://localhost:3000/signalingServer'));
+        await fetch('/api/signalingServer');
+        setSocket(io());
     }
 
     const disconnectSocket = () => {
