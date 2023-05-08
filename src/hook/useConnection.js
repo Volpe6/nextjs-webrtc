@@ -224,7 +224,7 @@ export const ConnectionProvider = ({ children }) => {
         /**
          * versel nao suporta web socket. pra resolver isso vou usar um server externo
          */
-        setSocket(io('http://webrtc-signaling-server.glitch.me/'));
+        setSocket(io('https://webrtc-signaling-server.glitch.me/'));
         // await fetch('/api/signalingServer');
         // setSocket(io());
     }
