@@ -6,15 +6,13 @@ import { toast } from "react-toastify";
 import useCall from "./useCall";
 
 const ConnectionContext = createContext();
-
+//TODO: checar se nao esta preso no status conecting, se estiver, tentar reconectar
+//TODO: Parece q quando a guia nao esta em foco a conexão fica presa no conecting, ver como resolver
 //TODO: melhorar envio de arquivos
 //TODO: melhorar tratamento de erros
 //TODO: melhorar tratamento de erros no envio de arquivos
 
 //TODO quando a conexao fechar nao matar o chat so peer connection
-
-//TODO verificar a possibilidade de usar o server interno do next js em substituiçao do server de sinalizaçao externo
-
 
 export const ConnectionProvider = ({ children }) => {
 

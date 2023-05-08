@@ -11,7 +11,6 @@ class Notifier {
             actions[action](...args);
             return;
         }
-        console.log(`${action}, não executada, pois nao foi encontrada`);
     }
 
     detachAllActions() { this.actions={}; }

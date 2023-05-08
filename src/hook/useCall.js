@@ -63,7 +63,7 @@ function useCall({socket, connections, createConnection}) {
         }
 
         function onCallCanceled(content) {
-            toast.info('recebendo cancelamento');
+            toast.info('recebendo cancelamento. user:'+content.name);
             const incomingCall = incomingCalls.find(call => call.target === content.name);
             const sentCall = sentCalls.find(call => call.target === content.name);
             if(incomingCall) {
@@ -75,7 +75,7 @@ function useCall({socket, connections, createConnection}) {
         }
         
         function onCallError(content) {
-            toast.info('recebendo cancelamento');
+            toast.info('recebendo erro. user:'+content.name);
             const call = sentCalls.find(call => call.target === content.name);
             if(call) {
                 call.cancel({detail: content.detail});

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import Message, { TYPES as MESSAGE_TYPES } from "./message";
 import Peer, { DISPLAY_TYPES } from "./peer";
 import User from "./user";

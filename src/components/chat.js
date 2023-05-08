@@ -5,13 +5,13 @@ import Message from "./message";
 import { DISPLAY_TYPES } from "@/models/peer";
 import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { toast } from "react-toastify";
+import FileUpload from "@/utils/fileUpload";
 
 function Chat() {
     const textInput = useRef(null);
     const [messages, setMessages] = useState([]);
     const receiveFiles = useRef([]);
     const sendFiles = useRef([]);
-    // const [file, setFile] = useState(null);
     
     const [localAudioStream, setLocalAudioStream] = useState(null);
     const [localVideoStream, setLocalVideoStream] = useState(null);
@@ -50,34 +50,42 @@ function Chat() {
             const msgStrategy = {
                 [MESSAGE_TYPES.TEXT]: (msg) => {},
                 [MESSAGE_TYPES.FILE_META]: (msg) => {
-                    // const { message } = msg;
-                    // console.log('file meta', message);
-                    // const receiveFile = new FileUpload(message);
-                    // receiveFile.attachObserver({ 
-                    //     obs: async (content) => {
-                    //         const strategyFile = {
-                    //             end: content => {
-                    //                 const { id } = content.data;
-                    //                 receiveFiles.current = receiveFiles.current.filter(fileUpload => fileUpload.id !== id);
-                    //             },
-                    //         };
-                    //         const chosenFileStrategy = strategyFile[content.type];
-                    //         if(chosenFileStrategy) {
-                    //             chosenFileStrategy(content);
-                    //         }
-                    //     }
-                    // });
-                    // console.log('receiveFile', receiveFile);
-                    // receiveFiles.current = [...receiveFiles.current, receiveFile];
+                    const { message } = msg;
+                    console.log('file meta', message);
+                    const receiveFile = new FileUpload(message);
+                    receiveFile.attachObserver({ 
+                        obs: async (event, ...args) => {
+                            const actions = {
+                                progress: progress => console.log(`progresso: ${progress}`),
+                                received: (id, metadata, file) => {
+                                    toast.warn(`recebido`);
+                                    toast.warn(`download-${id}`);
+                                    console.log('id', `download-${id}`);
+                                    const downloadAnchor = document.querySelector(`#download-${id}`);
+                                    downloadAnchor.href = URL.createObjectURL(file);
+                                    downloadAnchor.download = metadata.name;
+                                    downloadAnchor.textContent = `Click to download '${metadata.name}' (${metadata.size} bytes)`;
+                                    downloadAnchor.style.display = 'block';
+                                },
+                                end: id => {
+                                    receiveFiles.current = receiveFiles.current.filter(fileUpload => fileUpload.id !== id);
+                                }
+                            };
+                            receiveFile.executeActionStrategy(actions, event, ...args);
+                        }
+                    });
+                    console.log('receiveFile', receiveFile);
+                    receiveFiles.current = [...receiveFiles.current, receiveFile];
                 },
                 [MESSAGE_TYPES.CHUNK]: (msg) => {
-                    // const { message } = msg;
-                    // console.log('message', message);
-                    // console.log('message', receiveFiles);
-                    // const receiveFile = receiveFiles.current.find(fileUpload => fileUpload.id === message.id);
-                    // if(receiveFile) {
-                    //     receiveFile.receive(Uint8Array.from(message.chunk));
-                    // }
+                    const { message } = msg;
+                    console.log('message', message);
+                    console.log('message chuck', message.chunk);
+                    console.log('message', receiveFiles);
+                    const receiveFile = receiveFiles.current.find(fileUpload => fileUpload.id === message.id);
+                    if(receiveFile) {
+                        receiveFile.receive(message.chunk);
+                    }
                 },
             }
             try {
@@ -113,9 +121,6 @@ function Chat() {
         function onTrack(conn, event) {
             console.log('lidando com track')
             console.log(`track`, event);
-            // if(!event) {
-            //     return;
-            // }
             const { transceiver, track, streams } = event;
             const trv = conn.peer.retriveTransceiver({displayType: DISPLAY_TYPES.DISPLAY});
             let mediaRef = transceiver.mid == trv.mid? displayRef.current: videoRef.current;
@@ -169,55 +174,53 @@ function Chat() {
 
     const handleFile = (event) => {
         const files = event.target.files;
+        if(!files) {
+            console.log('nada escolhido');
+            return;
+        }
         if(files.length > 1) {
             alert('atuamente apenas um arquivo por vez');
             event.target.value = '';
             return;
         }
-        // const selected = await open();
-        // if(!selected) {
-        //     console.log('usuario nao escolheu nada');
-        //     return null;
-        // }
-        // const metaData = await metadata(selected);
-        // metaData.fileName = selected.substring(selected.lastIndexOf('\\') + 1);
-        // const sendFile = new FileUpload({ path: selected, metaData, connection: conn });
-        // sendFile.attachObserver({
-        //     obs: async (content) => {
-        //         const strategy = {
-        //             end: content => {
-        //                 console.log(content);
-        //                 const { id } = content.data;
-        //                 sendFiles.current = sendFiles.current.filter(fileUpload => fileUpload.id !== id);
-        //             },
-        //             cleanqueue: content => {
-        //                 // Limpando a fila de envio com uma mensagem vazia
-        //                 console.log('linpando fila');
-        //                 conn.peer.cleanChannelqueue();
-        //             },
-        //             info: content => {
-        //                 conn.send({
-        //                     type: MESSAGE_TYPES.FILE_META,
-        //                     message: content.data
-        //                 });
-        //             },
-        //             chunk: content => {
-        //                 content.data.chunk = Array.from(content.data.chunk);
-        //                 conn.send({
-        //                     type: MESSAGE_TYPES.CHUNK,
-        //                     message: content.data
-        //                 });
-        //             },
-        //         };
-        //         const chosenStrategy = strategy[content.type];
-        //         if(chosenStrategy) {
-        //             chosenStrategy(content);
-        //         }
-        //     }
-        // });
-        // sendFile.send();
-        // sendFiles.current = [...sendFiles.current, sendFile];
-        // setMessages([...conn.getMessages()]);
+        
+        const sendFile = new FileUpload({ file: files[0], connection: conn });
+        event.target.value = '';
+        sendFile.attachObserver({
+            obs: async (event, ...args) => {
+                const actions = {
+                    progress: progress => console.log(`progresso: ${progress}`),
+                    end: id => {
+                        console.log(id);
+                        toast.warn('finalizou');
+                        sendFiles.current = sendFiles.current.filter(fileUpload => fileUpload.id !== id);
+                    },
+                    cleanqueue: _ => {
+                        // Limpando a fila de envio com uma mensagem vazia
+                        console.log('linpando fila');
+                        conn.peer.cleanChannelqueue();
+                    },
+                    info: data => console.log(data),
+                    metadata: data => {
+                        conn.send({
+                            type: MESSAGE_TYPES.FILE_META,
+                            message: data
+                        });
+                    },
+                    chunk: data => {
+                        //é feito isso para conseguir serializar
+                        conn.send({
+                            type: MESSAGE_TYPES.CHUNK,
+                            message: data
+                        });
+                    }
+                };
+                sendFile.executeActionStrategy(actions, event, ...args);
+            }
+        });
+        sendFile.send();
+        sendFiles.current = [...sendFiles.current, sendFile];
+        setMessages([...conn.getMessages()]);
     }
 
     return (<>
@@ -231,11 +234,12 @@ function Chat() {
             </div>
             <div className="flex-1 overflow-y-scroll p-4 space-y-2">
                 {messages.map((chatMsg, i) => {
-                    let message = chatMsg.message;
+                    let { id, message } = chatMsg;
                     if(chatMsg.type === MESSAGE_TYPES.FILE_META) {
-                        message = chatMsg.message.metaData.fileName;
+                        id = chatMsg.message.id;
+                        message = chatMsg.message.file.name;
                     }
-                    return <Message key={i} sender={chatMsg.senderId===user.id} message={message} />;
+                    return <Message key={i} props={{id, message, sender:chatMsg.senderId===user.id}} />;
                 }
                 )}
             </div>
@@ -245,7 +249,7 @@ function Chat() {
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-full">
                 Enviar
                 </button>
-                <input type="file"/>
+                <input type="file" onChange={handleFile}/>
                 <audio ref={localAudioRef} autoPlay muted></audio>
                 <video ref={localVideoRef} width={100} playsInline autoPlay muted></video>
                 <video ref={localDisplayRef} width={100} playsInline autoPlay muted></video>
