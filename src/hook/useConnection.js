@@ -6,6 +6,8 @@ import { toast } from "react-toastify";
 import useCall from "./useCall";
 
 const ConnectionContext = createContext();
+
+//TODO ficar verificando se o nextjs mais recente corrigiu o bug do socket io: https://github.com/vercel/next.js/discussions/48422
 //TODO: checar se nao esta preso no status conecting, se estiver, tentar reconectar
 //TODO: Parece q quando a guia nao esta em foco a conexão fica presa no conecting, ver como resolver
 //TODO: melhorar envio de arquivos

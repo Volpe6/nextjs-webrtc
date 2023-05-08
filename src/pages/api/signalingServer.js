@@ -1,4 +1,4 @@
-import { Server } from 'Socket.IO';
+import { Server } from 'socket.io';
 
 export default async (req, res) => {
   const initializeSocket = (res) => {
@@ -124,8 +124,4 @@ export default async (req, res) => {
   }
   initializeSocket(res);
   res.end();
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> feature-file-transferer
