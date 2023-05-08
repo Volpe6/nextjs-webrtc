@@ -15,7 +15,6 @@ const ConnectionContext = createContext();
 //TODO: melhorar tratamento de erros no envio de arquivos
 
 //TODO quando a conexao fechar nao matar o chat so peer connection
-
 export const ConnectionProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
     const [connections, setConnections] = useState([]);
