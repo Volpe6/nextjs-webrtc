@@ -57,16 +57,16 @@ function Chat() {
                         obs: async (event, ...args) => {
                             const actions = {
                                 progress: progress => console.log(`progresso: ${progress}`),
-                                received: (id, metadata, file) => {
-                                    toast.warn(`recebido`);
-                                    toast.warn(`download-${id}`);
-                                    console.log('id', `download-${id}`);
-                                    const downloadAnchor = document.querySelector(`#download-${id}`);
-                                    downloadAnchor.href = URL.createObjectURL(file);
-                                    downloadAnchor.download = metadata.name;
-                                    downloadAnchor.textContent = `Click to download '${metadata.name}' (${metadata.size} bytes)`;
-                                    downloadAnchor.style.display = 'block';
-                                },
+                                // received: (id, metadata, file) => {
+                                //     toast.warn(`recebido`);
+                                //     toast.warn(`download-${id}`);
+                                //     console.log('id', `download-${id}`);
+                                //     const downloadAnchor = document.querySelector(`#download-${id}`);
+                                //     downloadAnchor.href = URL.createObjectURL(file);
+                                //     downloadAnchor.download = metadata.name;
+                                //     downloadAnchor.textContent = `Click to download '${metadata.name}' (${metadata.size} bytes)`;
+                                //     downloadAnchor.style.display = 'block';
+                                // },
                                 end: id => {
                                     receiveFiles.current = receiveFiles.current.filter(fileUpload => fileUpload.id !== id);
                                 }
@@ -193,7 +193,7 @@ function Chat() {
         sendFile.attachObserver({
             obs: async (event, ...args) => {
                 const actions = {
-                    progress: progress => console.log(`progresso: ${progress}`),
+                    // progress: progress => console.log(`progresso: ${progress}`),
                     error: error => toast(error),
                     abort: _ => toast('Envio do arquivo foi cancelado'),
                     end: id => {
@@ -220,16 +220,16 @@ function Chat() {
                             message: data
                         });
                     },
-                    received: (id, metadata, file) => {
-                        toast.warn(`arquivo enviado`);
-                        toast.warn(`download-${id}`);
-                        console.log('id', `download-${id}`);
-                        const downloadAnchor = document.querySelector(`#download-${id}`);
-                        downloadAnchor.href = URL.createObjectURL(file);
-                        downloadAnchor.download = metadata.name;
-                        downloadAnchor.textContent = `Click to download '${metadata.name}' (${metadata.size} bytes)`;
-                        downloadAnchor.style.display = 'block';
-                    },
+                    // received: (id, metadata, file) => {
+                    //     toast.warn(`arquivo enviado`);
+                    //     toast.warn(`download-${id}`);
+                    //     console.log('id', `download-${id}`);
+                    //     const downloadAnchor = document.querySelector(`#download-${id}`);
+                    //     downloadAnchor.href = URL.createObjectURL(file);
+                    //     downloadAnchor.download = metadata.name;
+                    //     downloadAnchor.textContent = `Click to download '${metadata.name}' (${metadata.size} bytes)`;
+                    //     downloadAnchor.style.display = 'block';
+                    // },
                 };
                 sendFile.executeActionStrategy(actions, event, ...args);
             }
@@ -251,11 +251,16 @@ function Chat() {
             <div className="flex-1 overflow-y-scroll p-4 space-y-2">
                 {messages.map((chatMsg, i) => {
                     let { id, message } = chatMsg;
+                    let fileUpload;
                     if(chatMsg.type === MESSAGE_TYPES.FILE_META) {
                         id = chatMsg.message.id;
                         message = chatMsg.message.file.name;
+                        fileUpload = sendFiles.current.find(file=>file.id === id);
+                        if(!fileUpload) {
+                            fileUpload = receiveFiles.current.find(file=>file.id === id);
+                        }
                     }
-                    return <Message key={i} props={{id, message, sender:chatMsg.senderId===user.id}} />;
+                    return <Message key={i} props={{id, fileUpload, message, sender:chatMsg.senderId===user.id}} />;
                 }
                 )}
             </div>
