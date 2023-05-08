@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 export const TYPES = {
     TEXT: 'text',
     CHUNK: 'chunk',
@@ -6,6 +8,7 @@ export const TYPES = {
 
 class Message {
     constructor(senderId, receiverId, message, type=TYPES.TEXT) {
+        this.id = uuidv4();
         this.type = type;
         this.senderId = senderId;
         this.receiverId = receiverId;

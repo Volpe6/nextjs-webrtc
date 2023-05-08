@@ -1,116 +1,187 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readBinaryFile, writeBinaryFile, BaseDirectory } from '@tauri-apps/api/fs';
-//https://github.com/tauri-apps/tauri/issues/996
-const CHUNK_SIZE = 26624;
-
-const MAX_BUFFER_AMOUNT = Math.max(CHUNK_SIZE * 8, 5242880); // 8 chunks or at least 5 MiB
-/**
- * o tauri é muito lento pra lidar com arquivos, entao limitei pra 10mb
- * de acordo com link abaixo vai melhorar no tauri v2
- * https://github.com/tauri-apps/tauri/issues/1817
- */
-const MAX_FILE_SIZE = 15728640;
-
-class FileUpload {
+import Notifier from '@/models/notifier';
+import { toast } from 'react-toastify';
+import FileConstants from './fileConstants';
+class FileUpload extends Notifier {
     constructor(opts) {
-        const { id, path, metaData, connection } = opts;
+        super();
+        const { id, file, connection } = opts;
         this.id = id;
         if(!id) {
             this.id = uuidv4();
         }
         this.connection = connection;
-        this.path = path;
-        this.metaData = metaData;
+        this.file = file;
         this.receivedSize = 0;
-        this.observers = {};
         this.receiveBuffer = [];
 
         this.currentOffset = 0;
         this.stopped = false;
         this.cancel = false;
+
+        this.worker = null;
+        this.fileReader = null;
+
     }
 
-    attachObserver(opts) { 
-        const options = Object.assign({id:uuidv4()}, opts);
-        this.observers[options.id] = options.obs; 
-    }
-
-    detachAllObserver() { this.observers={}; }
-    
-    detachObserver(id) { 
-        const deleted = delete this.observers[id];
-        if(!deleted) {
-            throw new Error(`não foi possivel remover o observador ${id}`);
+    cancel() {
+        if (typeof window.Worker !== "undefined") {
+            this.worker.postMessage({type: 'abort'});
+        } else {
+            if(this.fileReader) {
+                this.fileReader.abort();
+            }
         }
-        console.log(`observador removido ${id}`);
-        console.log('observers', this.observers);
-    }
-
-    _notify(data) {
-        const content = Object.assign({}, data);
-        Object.values(this.observers).forEach(obs => obs(content));
     }
 
     async receive(data) {
-        const buffer = data.buffer;
-        console.log(`${this.id} Received Message ${buffer.byteLength}`);
-        this.receiveBuffer.push(buffer);
-        this.receivedSize += buffer.byteLength;
-        console.log(`recebido:`, (this.receivedSize*100)/this.metaData.size)
-        if(this.receivedSize === this.metaData.size) {
-            console.log('escrevendo arquivo');
-            const mergedBuffer = this.receiveBuffer.reduce((accumulator, currentValue) => {
-                const tmp = new Uint8Array(accumulator.byteLength+currentValue.byteLength);
-                tmp.set(new Uint8Array(accumulator), 0);
-                tmp.set(new Uint8Array(currentValue), accumulator.byteLength);
-                return tmp.buffer;
-            });
-            const receivedFile = new Uint8Array(mergedBuffer);
-            writeBinaryFile(`tauri-${this.metaData.fileName}`, receivedFile, { dir: BaseDirectory.Download })
-            .then(() => console.log('arquivo escrito'))
-            .catch(() => console.log('error ao salvar'))
-            .finally(() => this._notify({type: 'end', data: {id:this.id}}));
+        if (typeof window.Worker !== "undefined") {
+            // Web Workers são suportados
+            if(!this.worker) {
+                toast('woerk metadata');
+                this.worker = new Worker(new URL('./receiveFileWorker.js', import.meta.url));
+                this.worker.postMessage({ type: 'metadata', data: this.file });
+            }
+            this.worker.postMessage({type: 'receive', data: data});
+            this.worker.onmessage = (e) => {
+                const { type, data } = e.data;
+                switch(type) {
+                    case 'progress':
+                        this.notify("progress", data);
+                        break;
+                    case 'received':
+                        this.notify("received", this.id, this.file, data);
+                        break;
+                    case 'end':
+                        this.worker.terminate();
+                        this.notify('end', this.id);
+                        break;
+                }
+            }
+        } else {
+            // Web Workers não são suportados
+            const buffer = Uint8Array.from(data).buffer;
+            this.receiveBuffer.push(buffer);
+            this.receivedSize += buffer.byteLength;
+            
+            this.notify('progress', (this.receivedSize*100)/file.size);
+            if(this.receivedSize === this.file.size) {
+                const received = new Blob(this.receiveBuffer);
+                this.receiveBuffer = [];
+                this.receivedSize = 0;
+                this.notify('received',this.id, this.file, received);
+                this.notify('end', this.id);
+            }
         }
     }
 
     async send() {
-        if(this.metaData.size > MAX_FILE_SIZE){
-            alert(`Tamanho máximo permitido ${MAX_FILE_SIZE}, tamanho do arquivo ${this.metaData.size}`);
-            return;
+        const checkBufferAmount = () => {
+            if(this.connection.peer.channel.bufferedAmount > this.connection.peer.channel.bufferedAmountLowThreshold) {
+                this.notify("cleanqueue");
+                this.notify("info", 'parando');
+                this.worker.postMessage({type: 'stop'});
+                return;
+            }
+            this.notify("info", 'continuando');
+            this.worker.postMessage({type: 'continue'});
         }
+
+        // if(this.file.size > MAX_FILE_SIZE){
+        //     alert(`Tamanho máximo permitido ${MAX_FILE_SIZE}, tamanho do arquivo ${this.metaData.size}`);
+        //     return;
+        // }
         if(!this.connection) {
             throw new Error('a conexao nao foi definida');
         }
-        this._notify({type:"info", data: { id:this.id, metaData: this.metaData }});
-        console.log('lendo')
-        readBinaryFile(this.path)
-        .then(async contents => {
-            console.log('terminou de ler')
-            let offset = 0;
-            let sendedSize = 0;
-            this.connection.peer.channel.bufferedAmountLowThreshold = MAX_BUFFER_AMOUNT;
-            while(offset < this.metaData.size && !this.cancel) {
-                if(this.connection.peer.channel.bufferedAmount > this.connection.peer.channel.bufferedAmountLowThreshold) {
-                    // esperando a fila de envio esvaziar
-                   this.stopped = true;
-                   this._notify({type:"cleanqueue"});
-                   await new Promise(resolve => setTimeout(resolve, 1000));
-                   continue;
+
+        const interval = setInterval(checkBufferAmount, 100);
+        
+        this.notify("metadata", { 
+            id:this.id, 
+            file: {
+                name: this.file.name,
+                size: this.file.size,
+                type: this.file.type
+            } 
+        });
+        if (typeof window.Worker !== "undefined") {
+            // Web Workers são suportados
+            this.worker = new Worker(new URL('./sendFileWorker.js', import.meta.url));
+            this.worker.postMessage({type: 'start', data: this.file});
+            this.worker.onmessage = (e) => {
+                const { type, data } = e.data;
+                switch(type) {
+                    case 'progress':
+                        this.notify("progress", data);
+                        break;
+                    case 'received'://aquivo foi lido e colocado em um blob afim de possibilitar download do mesmo pelo chat
+                        this.notify("received", this.id, this.file, data);
+                        break;
+                    case 'chunk':
+                        this.notify("chunk", {id:this.id, chunk: data});
+                        break;
+                    case 'stoped':
+                        this.notify("info", `${this.id}->esperando fila limpar`);
+                        break;
+                    case 'abort':
+                        clearInterval(interval);
+                        this.worker.terminate();
+                        this.notify("abort", data);
+                        break;
+                    case 'error':
+                        clearInterval(interval);
+                        this.worker.terminate();
+                        this.notify("error", data);
+                        break;
+                    case 'end':
+                        clearInterval(interval);
+                        this.worker.terminate();
+                        this.notify('end', this.id);
+                        break;
                 }
-                this.stopped = false;
-                const chunk = contents.slice(offset, offset + CHUNK_SIZE);
-                console.log(`${this.id} send chunk`, chunk);
-                this._notify({type:"chunk", data: {id:this.id, chunk}});
-                offset += CHUNK_SIZE;
-                sendedSize += chunk.buffer.byteLength;
-                console.log(`enviado:`, (sendedSize*100)/this.metaData.size);
             }
-        })
-        .catch(() => {
-            console.log('erro no envio');
-            this._notify({type:"error", data: {id:this.id}});
-        })
-        .finally(() => this._notify({type:"end", data: {id:this.id}}));
+        } else {
+            // Web Workers não são suportados
+            this.fileReader = new FileReader();
+            let offset = 0;
+            fileReader.onerror =  error => this.notify('error', `Erro lendo o arquivo: ${this.file.name}`);
+            fileReader.onabort = (e) => this.notify('abort', 'Leitura do arquivo abortado:' + this.file.name);
+            fileReader.onload = async (e) => {
+                console.log('FileRead.onload ', e);
+                while(stop) {
+                    this.notify('stoped');
+                    await new Promise(resolve => setTimeout(resolve, FileConstants.SLEEP_TIME));
+                }
+                //envia o resultado da leitura de volta
+                /**
+                 * nao tava conseguindo enviar um array de buffer em um objeto stringficado.
+                 * entao transformei o ArrayBuffer retornado em um Uint8Array e entao transforma-lo 
+                 * em um array
+                 * TODO: verificar se tem uma forma de fazer isso melhor
+                 */
+                this.notify('chunk', {id:this.id, chunk: Array.from(new Uint8Array(e.target.result))});
+                this.receiveBuffer.push(e.target.result);
+                offset += e.target.result.byteLength;
+                this.notify("progress", (offset*100)/this.file.size);
+                //se o arquivo nao foi completamente lido, le o proximo pedaço do arquivo
+                if (offset < this.file.size) {
+                    readSlice(offset);
+                } else {
+                    this.notify("received", this.id, this.file, new Blob(this.receiveBuffer));
+                    this.receiveBuffer = [];
+                    this.notify('end', this.id);
+                }
+            };
+
+            const readSlice = crrOffset => {
+                console.log('readSlice ', crrOffset);
+                const slice = this.file.slice(offset, crrOffset + FileConstants.CHUNK_SIZE);
+                fileReader.readAsArrayBuffer(slice);
+            };
+
+            readSlice(0);//inicia a leitura do arquivo como array buffer
+        }
     }
 }
 

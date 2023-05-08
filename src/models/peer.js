@@ -137,7 +137,12 @@ class Peer extends Notifier {
             this.emit('info', `Peer ${this.name} >> tentou-se enviar um dado pelo canal de comunicação com ele fechado. Estado do canal: ${this.channel.readyState}`);
             return;
         }
-        this.channel.send(data);
+        try {
+            this.channel.send(data);
+        } catch (error) {
+            this.emit('error', `Peer ${this.name} >> falha no envio de dados : ${error.toString()}`);
+            this.emit('datachannelerror', `Peer ${this.name} >> falha no envio de dados : ${error.toString()}`);
+        }
     }
     //envio de arquivo
     //TODO verificar se por esse codigo aqui é o melhor

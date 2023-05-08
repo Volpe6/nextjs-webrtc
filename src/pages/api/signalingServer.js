@@ -124,4 +124,8 @@ export default async (req, res) => {
   }
   initializeSocket(res);
   res.end();
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> feature-file-transferer
