@@ -213,7 +213,17 @@ function Chat() {
                             type: MESSAGE_TYPES.CHUNK,
                             message: data
                         });
-                    }
+                    },
+                    received: (id, metadata, file) => {
+                        toast.warn(`arquivo enviado`);
+                        toast.warn(`download-${id}`);
+                        console.log('id', `download-${id}`);
+                        const downloadAnchor = document.querySelector(`#download-${id}`);
+                        downloadAnchor.href = URL.createObjectURL(file);
+                        downloadAnchor.download = metadata.name;
+                        downloadAnchor.textContent = `Click to download '${metadata.name}' (${metadata.size} bytes)`;
+                        downloadAnchor.style.display = 'block';
+                    },
                 };
                 sendFile.executeActionStrategy(actions, event, ...args);
             }

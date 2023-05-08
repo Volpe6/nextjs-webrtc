@@ -1,7 +1,4 @@
-const CHUNK_SIZE = 26624;
-const MAX_BUFFER_AMOUNT = Math.max(CHUNK_SIZE * 8, 5242880); // 8 chunks or at least 5 MiB
-const MAX_FILE_SIZE = 15728640;
-const TIME_OUT = 1000;
+import FileConstants from "./fileConstants";
 
 const fileReader = new FileReader();
 
@@ -15,6 +12,7 @@ onmessage = function(e) {
         continue: _ => stop = false,
         abort: _ => fileReader.abort(),
         start: file => {
+            const receiveBuffer = [];
             let offset = 0;
 
             fileReader.onerror =  error =>  postMessage({
@@ -30,7 +28,7 @@ onmessage = function(e) {
                 console.log('FileRead.onload ', e);
                 while(stop) {
                     postMessage({type: 'stoped'});
-                    await new Promise(resolve => setTimeout(resolve, TIME_OUT));
+                    await new Promise(resolve => setTimeout(resolve, FileConstants.SLEEP_TIME));
                 }
                 //envia o resultado da leitura de volta
                 /**
@@ -43,19 +41,21 @@ onmessage = function(e) {
                     type: 'chunk',
                     data: Array.from(new Uint8Array(e.target.result))
                 });
+                receiveBuffer.push(e.target.result);
                 offset += e.target.result.byteLength;
                 postMessage({ type: 'progress', data: (offset*100)/file.size });
                 //se o arquivo nao foi completamente lido, le o proximo pedaço do arquivo
                 if (offset < file.size) {
                     readSlice(offset);
                 } else {
+                    postMessage({ type: 'received', data: new Blob(receiveBuffer)});
                     postMessage({type: 'end'});
                 }
             };
 
             const readSlice = crrOffset => {
                 console.log('readSlice ', crrOffset);
-                const slice = file.slice(offset, crrOffset + CHUNK_SIZE);
+                const slice = file.slice(offset, crrOffset + FileConstants.CHUNK_SIZE);
                 fileReader.readAsArrayBuffer(slice);
             };
 
