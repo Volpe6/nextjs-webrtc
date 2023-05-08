@@ -20,6 +20,18 @@ class FileUpload extends Notifier {
         this.cancel = false;
 
         this.worker = null;
+        this.fileReader = null;
+
+    }
+
+    cancel() {
+        if (typeof window.Worker !== "undefined") {
+            this.worker.postMessage({type: 'abort'});
+        } else {
+            if(this.fileReader) {
+                this.fileReader.abort();
+            }
+        }
     }
 
     async receive(data) {
@@ -131,7 +143,7 @@ class FileUpload extends Notifier {
             }
         } else {
             // Web Workers não são suportados
-            const fileReader = new FileReader();
+            this.fileReader = new FileReader();
             let offset = 0;
             fileReader.onerror =  error => this.notify('error', `Erro lendo o arquivo: ${this.file.name}`);
             fileReader.onabort = (e) => this.notify('abort', 'Leitura do arquivo abortado:' + this.file.name);

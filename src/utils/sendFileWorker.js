@@ -48,6 +48,7 @@ onmessage = function(e) {
                 if (offset < file.size) {
                     readSlice(offset);
                 } else {
+                    //aquivo foi lido e colocado em um blob afim de possibilitar download do mesmo pelo chat
                     postMessage({ type: 'received', data: new Blob(receiveBuffer)});
                     postMessage({type: 'end'});
                 }

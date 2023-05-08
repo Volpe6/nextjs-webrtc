@@ -146,12 +146,16 @@ function Chat() {
             videoRef.current.srcObject = null;
             displayRef.current.srcObject = null;
         }
+        function onDataChannelError(conn, _) {
+            sendFiles.current.forEach(file => file.cancel());
+        }
         
         const id = `connection-chat-${conn.name}`;
         conn.attachObserver({
             id: id,
             obs: async (event, ...args) => {
                 const actions = {
+                    datachannelerror: onDataChannelError,
                     datachannelmessage: onDataChannelMessage,
                     changeuserstream: onChangeUserStream,
                     changedisplaystream: onChangeDisplayStream,
@@ -190,6 +194,8 @@ function Chat() {
             obs: async (event, ...args) => {
                 const actions = {
                     progress: progress => console.log(`progresso: ${progress}`),
+                    error: error => toast(error),
+                    abort: _ => toast('Envio do arquivo foi cancelado'),
                     end: id => {
                         console.log(id);
                         toast.warn('finalizou');
