@@ -8,14 +8,13 @@ import useCall from "./useCall";
 const ConnectionContext = createContext();
 //TODO: checar se nao esta preso no status conecting, se estiver, tentar reconectar
 //TODO: Parece q quando a guia nao esta em foco a conexão fica presa no conecting, ver como resolver
+//TODO ficar verificando se o nextjs mais recente corrigiu o bug do socket io: https://github.com/vercel/next.js/discussions/48422
 //TODO: melhorar envio de arquivos
 //TODO: melhorar tratamento de erros
 //TODO: melhorar tratamento de erros no envio de arquivos
 
 //TODO quando a conexao fechar nao matar o chat so peer connection
-
 export const ConnectionProvider = ({ children }) => {
-
     const [socket, setSocket] = useState(null);
     const [connections, setConnections] = useState([]);
     const [currConnection, setCurrConnection] = useState(null);
@@ -219,7 +218,7 @@ export const ConnectionProvider = ({ children }) => {
         console.log('polite', opts);
         socket.emit('polite', {name: user.name, target: opts.targetName});
     }
-
+    
     const connectSocket = async () => {
         await fetch('/api/signalingServer');
         setSocket(io());
