@@ -220,8 +220,9 @@ export const ConnectionProvider = ({ children }) => {
         socket.emit('polite', {name: user.name, target: opts.targetName});
     }
 
-    const connectSocket = () => {
-        setSocket(io('http://webrtc-signaling-server.glitch.me/'));
+    const connectSocket = async () => {
+        await fetch('/api/signalingServer');
+        setSocket(io());
     }
 
     const disconnectSocket = () => {
