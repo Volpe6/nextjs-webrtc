@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 export const TYPES = {
     TEXT: 'text',
     CHUNK: 'chunk',
-    FILE_META: 'fileMeta'//informaçoes sobre o arquivo enviado(tamanho, nome....)
+    FILE_META: 'fileMeta',//informaçoes sobre o arquivo enviado(tamanho, nome....),
+    FILE_ABORT: 'fileAbort',
+    FILE_ERROR: 'fileError'
 };
 
 class Message {

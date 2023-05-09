@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import Connection from "@/models/connection";
 import { toast } from "react-toastify";
 import useCall from "./useCall";
+import useFile from "./useFile";
 
 const ConnectionContext = createContext();
 
@@ -22,7 +23,8 @@ export const ConnectionProvider = ({ children }) => {
     const [subscribed, setSubscribed] = useState(false);
 
     const { user } = useAuth();
-    const call = useCall({ socket, connections, createConnection });
+    const callManager = useCall({ socket, connections, createConnection });
+    const fileManager = useFile();
     
     useEffect(() => {
         async function connect(opts) {
@@ -275,22 +277,16 @@ export const ConnectionProvider = ({ children }) => {
             console.log(`conexão com o user "${target}" não encontrado`);
             return;
         }
-        const incomingCall = call.incomingCalls.find(call => call.target === target);
-        const sentCall = call.sentCalls.find(call => call.target === target);
-        if(incomingCall) {
-            incomingCall.cancel();
-            socket.emit('callcanceled', {
-                name: user.name,
-                target: incomingCall.target
-            });
-        }
-        if(sentCall) {
-            sentCall.cancel();
-            socket.emit('callcanceled', {
-                name: user.name,
-                target: sentCall.target
-            });
-        }
+        fileManager.cancelFilesFromConnection(conn);
+        callManager.calls.forEach(call=> {
+            if(call.target===target) {
+                call.cancel();
+                socket.emit('callcanceled', {
+                    name: user.name,
+                    target: call.target
+                });
+            }
+        });
         try {
             conn.close();
         } catch (error) {
@@ -318,7 +314,8 @@ export const ConnectionProvider = ({ children }) => {
             socket,
             currConnection,
             connections,
-            call,
+            callManager,
+            fileManager,
             connectSocket,
             createConnection,
             removeConnection,

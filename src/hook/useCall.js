@@ -10,28 +10,39 @@ import Call from "@/models/call";
 function useCall({socket, connections, createConnection}) {
     const { user } = useAuth();
     
-    const [sentCalls, setSentCalls] = useState([]);
-    const [incomingCalls, setIncomingCalls] = useState([]);
+    const [calls, setCalls] = useState([]);
 
     useEffect(() => {
         if(!socket) {
             return;
         }
 
-        function completeCall(content) {
-            const call = sentCalls.find(call => call.target === content.name);
+        function completeCall(isIncoming, content) {
+            const call = calls.find(call => call.isIncoming===isIncoming&&call.target===content.name);
             if(call) {
                 call.complete();
             }
             return call;
         }
+
+        function cancelCall(content) {
+            calls.forEach(call=> {
+                if(call.isIncoming&&call.target===content.name) {
+                    call.cancel();
+                } else if(!call.isIncoming&&call.name===content.name) {
+                    call.cancel();
+                }
+            });
+        }
         
         function onCall(content) {
-            if(incomingCalls.find(call => call.target === content.name)) {
+            //nesse momento a chamada é recebida entao o alvo é quem enviou, ou seja, é o "content.name"
+            if(calls.find(call => call.isIncoming&&call.target===content.name)) {
+                console.log(calls);
                 console.log(`já exite uma chamada para ${content.name}`);
                 return;
             }
-            const incomingCall = new Call(user.name, content.name);
+            const incomingCall = new Call(user.name, content.name, true);
             incomingCall.attachObserver({
                 obs: async (event, ...args) => {
                     const actions = {
@@ -42,41 +53,35 @@ function useCall({socket, connections, createConnection}) {
                                 console.log(`detalhe ${data.detail}`);
                             }
                         },
-                        end: (call) => setIncomingCalls(incomingCalls.filter(incomingCall => incomingCall.target !== call.target))
+                        end: (call) => setCalls(calls.filter(incomingCall => incomingCall.isIncoming&&incomingCall.target!==call.target))
                     };
                     incomingCall.executeActionStrategy(actions, event, ...args);
                 }
             });
-            setIncomingCalls([...incomingCalls, incomingCall]);
+            setCalls([...calls, incomingCall]);
         }
 
         function onCallAccepted(content) {
             toast.info('chamada aceita');
-            console.log('sents', sentCalls);
-            const call = completeCall(content);
+            const call = completeCall(false, content);
             createConnection({targetName: call.target});
         }
 
         function onCallRefused(content) {
-            completeCall(content);
+            completeCall(false, content);
             toast.info('chamada recusada');
         }
 
         function onCallCanceled(content) {
             toast.info('recebendo cancelamento. user:'+content.name);
-            const incomingCall = incomingCalls.find(call => call.target === content.name);
-            const sentCall = sentCalls.find(call => call.target === content.name);
-            if(incomingCall) {
-                incomingCall.cancel();
-            }
-            if(sentCall) {
-                sentCall.cancel();
-            }
+            cancelCall(content);
         }
         
         function onCallError(content) {
-            toast.info('recebendo erro. user:'+content.name);
-            const call = sentCalls.find(call => call.target === content.name);
+            // ate o momento o erro so é disparado quando uma chamada nao é concluida
+            // entao o content é o mesmo q foi enviado na chamada, entao o target é o q foi enviado,ou seja, é o "content.target"
+            toast.info('recebendo erro. user:' + content.target);
+            const call = calls.find(call => call.target === content.target);
             if(call) {
                 call.cancel({detail: content.detail});
             }
@@ -94,7 +99,7 @@ function useCall({socket, connections, createConnection}) {
             socket.off('callerror', onCallError);
             socket.off('callcanceled', onCallCanceled);
         };
-    }, [socket, incomingCalls, sentCalls]);
+    }, [socket, calls]);
    
     const call = async (opts) => {
         const { targetName } = opts;
@@ -103,15 +108,13 @@ function useCall({socket, connections, createConnection}) {
             toast.info(`ja conectado com ${targetName}`);
             return;
         }
-        if(sentCalls.find(call => call.target === targetName)) {
-            toast.info(`ja fazendo uma ligaçao para ${targetName}`);
+        const prevCall = calls.find(call => call.target === targetName);
+        if(prevCall) {
+            toast.info(prevCall.isIncoming?`já recebendo uma chamada de ${targetName}`:`já fazendo uma ligaçao para ${targetName}`);
             return;
         }
-        if(incomingCalls.find(call => call.target === targetName)) {
-            toast.info(`ja recebendo uma chamada de ${targetName}`);
-            return;
-        }
-        const sentCall = new Call(user.name, targetName);
+        
+        const sentCall = new Call(user.name, targetName, false);
         sentCall.attachObserver({
             obs: async (event, ...args) => {
                 const actions = {
@@ -123,17 +126,17 @@ function useCall({socket, connections, createConnection}) {
                             console.log(`detalhe ${data.detail}`);
                         }
                     },
-                    end: (call) => setSentCalls(sentCalls.filter(sentCall => sentCall.target !== call.target))
+                    end: (call) => setCalls(calls.filter(sentCall => !sentCall.isIncoming&&sentCall.target!==call.target)),
                 };
                 sentCall.executeActionStrategy(actions, event, ...args);
             }
         });
-        setSentCalls([...sentCalls, sentCall]);
+        setCalls([...calls, sentCall]);
         await sentCall.call();
     }
 
     const cancel = (index) => {
-        const sentCall = sentCalls[index];
+        const sentCall = calls[index];
         sentCall.cancel();
         socket.emit('callcanceled', {
             name: user.name,
@@ -142,7 +145,7 @@ function useCall({socket, connections, createConnection}) {
     }
 
     const acceptCall = (index) => {
-        const incomingCall = incomingCalls[index];
+        const incomingCall = calls[index];
         incomingCall.complete();
         socket.emit('callaccepted', {
             name: user.name,
@@ -152,7 +155,7 @@ function useCall({socket, connections, createConnection}) {
     }
 
     const refuseCall = (index) => {
-        const incomingCall = incomingCalls[index];
+        const incomingCall = calls[index];
         incomingCall.complete();
         socket.emit('callrefused', {
             name: user.name,
@@ -161,8 +164,7 @@ function useCall({socket, connections, createConnection}) {
     }
 
     return {
-        incomingCalls,
-        sentCalls,
+        calls,
         call,
         acceptCall,
         refuseCall,

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import useConnection from "@/hook/useConnection";
 
 function Connection({connection}) {
-    const { call, connections, hangUp } = useConnection();
+    const { callManager, connections, hangUp } = useConnection();
 
     const [connectionState, setConnectionState] = useState('desconectado');
     
@@ -26,7 +26,7 @@ function Connection({connection}) {
     }, [connections]);
 
     const handleCall = async () => {
-        call.call({targetName: connection.name});
+        callManager.call({targetName: connection.name});
     }
 
     const handleHangUp = () => {

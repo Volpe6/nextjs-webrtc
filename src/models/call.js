@@ -6,11 +6,12 @@ const MAX_CALLS = 50;
 const CALL_TIMEOUT = 5000;
 
 class Call extends Notifier {
-    constructor(name, target) {
+    constructor(name, target, isIncoming=false) {
         super();
         this.name = name;
         this.target = target;
         this.isCallComplete = false;
+        this.isIncoming = isIncoming;
         this.observers = {};
     }
 

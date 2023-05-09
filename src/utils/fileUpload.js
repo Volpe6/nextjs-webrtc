@@ -3,14 +3,15 @@ import Notifier from '@/models/notifier';
 import { toast } from 'react-toastify';
 import FileConstants from './fileConstants';
 class FileUpload extends Notifier {
-    constructor(opts) {
+    constructor(opts={isReceive:false}) {
         super();
-        const { id, file, connection } = opts;
+        const { id, file, connection, isReceive } = opts;
         this.id = id;
         if(!id) {
             this.id = uuidv4();
         }
         this.connection = connection;
+        this.isReceive = isReceive;
         this.file = file;
         this.receivedSize = 0;
         this.receiveBuffer = [];
@@ -21,24 +22,43 @@ class FileUpload extends Notifier {
 
         this.worker = null;
         this.fileReader = null;
-
+        this.checkBufferAmountId = null;
     }
 
-    cancel() {
+    async abort() {
+        const notifyMessage = () => {
+            const message = 'abortado';
+            this.connection.emit('info', `Connection ${this.connection.name} >> ${message}`);
+            this.notify("abort", this.id, 'sds');
+            this.notify('end', this.id);
+        }
         if (typeof window.Worker !== "undefined") {
-            this.worker.postMessage({type: 'abort'});
+            if(this.worker) {
+                if(this.isReceive) {
+                    notifyMessage();
+                }
+                this.worker.postMessage({type: 'abort'});
+                //espera um pouco pra processar, se nao isso nao é notificado ao front
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                this.worker.terminate();
+                return;
+            }
         } else {
             if(this.fileReader) {
                 this.fileReader.abort();
+                return;
             }
         }
+        notifyMessage();
     }
 
     async receive(data) {
+        if(!this.connection) {
+            throw new Error('a conexao nao foi definida');
+        }
         if (typeof window.Worker !== "undefined") {
             // Web Workers são suportados
             if(!this.worker) {
-                toast('woerk metadata');
                 this.worker = new Worker(new URL('./receiveFileWorker.js', import.meta.url));
                 this.worker.postMessage({ type: 'metadata', data: this.file });
             }
@@ -127,12 +147,16 @@ class FileUpload extends Notifier {
                     case 'abort':
                         clearInterval(interval);
                         this.worker.terminate();
-                        this.notify("abort", data);
+                        this.connection.emit('info', `Connection ${this.connection.name} >> ${data}`);
+                        this.notify("abort", this.id, data);
+                        this.notify('end', this.id);
                         break;
                     case 'error':
                         clearInterval(interval);
                         this.worker.terminate();
-                        this.notify("error", data);
+                        this.connection.emit('error', `Connection ${this.connection.name} >> ${data}`);
+                        this.notify("error", this.id, data);
+                        this.notify('end', this.id);
                         break;
                     case 'end':
                         clearInterval(interval);
@@ -145,8 +169,17 @@ class FileUpload extends Notifier {
             // Web Workers não são suportados
             this.fileReader = new FileReader();
             let offset = 0;
-            fileReader.onerror =  error => this.notify('error', `Erro lendo o arquivo: ${this.file.name}`);
-            fileReader.onabort = (e) => this.notify('abort', 'Leitura do arquivo abortado:' + this.file.name);
+            fileReader.onerror =  error => {
+                const message = `Erro lendo o arquivo: ${this.file.name}. ${error.toString()}`;
+                this.connection.emit('error', `Connection ${this.connection.name} >> ${message}`);
+                this.notify('error', this.id, message);
+            }
+            fileReader.onabort = (e) => {
+                const message = `Leitura do arquivo abortado: ${this.file.name}`;
+                this.connection.emit('info', `Connection ${this.connection.name} >> ${message}`);
+                this.notify('abort', this.id, message);
+                this.notify('end', this.id);
+            };
             fileReader.onload = async (e) => {
                 console.log('FileRead.onload ', e);
                 while(stop) {
@@ -170,6 +203,7 @@ class FileUpload extends Notifier {
                 } else {
                     this.notify("received", this.id, this.file, new Blob(this.receiveBuffer));
                     this.receiveBuffer = [];
+                    this.notify('end', this.id);
                     this.notify('end', this.id);
                 }
             };

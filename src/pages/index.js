@@ -12,7 +12,7 @@ export default function Home() {
   const { user } = useAuth();
   const displayRef = useRef(null);
 
-  const { currConnection: conn, call, connections, toogleAudio, toogleCamera, toogleDisplay, hangUp } = useConnection();
+  const { currConnection: conn, callManager, connections, toogleAudio, toogleCamera, toogleDisplay, hangUp } = useConnection();
 
   if(!user) {
     return;
@@ -47,7 +47,7 @@ export default function Home() {
     //   alert('atuamente somente uma conexao por vez');
     //   return;
     // }
-    call.call({targetName: targetName});
+    callManager.call({targetName: targetName});
   }
 
   return (
@@ -129,32 +129,38 @@ export default function Home() {
             <div className="flex">
               <h4 className="text-sm font-medium mb-2">chamadas em execuçao</h4>
               <ul>
-                {call.sentCalls.map((conn, i) => 
-                  <li key={i} className="flex flex-row items-center space-x-2">
-                    <span>chamando: {conn.target}</span>
-                  </li>
+                {callManager.calls.map((sentCall, i) => 
+                  {
+                    return !sentCall.isIncoming&&
+                    <li key={i} className="flex flex-row items-center space-x-2">
+                      <span>chamando: {sentCall.target}</span>
+                    </li>
+                  }
                 )}
               </ul>
             </div>
             <div className="flex">
               <h4 className="text-sm font-medium mb-2">chamadas recebidas</h4>
               <ul>
-                {call.incomingCalls.map((conn, i) => 
-                  <li key={i} className="flex flex-row items-center space-x-2">
-                    <span>recebendo chamada: {conn.name}</span>
-                    <button
-                      className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
-                      onClick={() => call.acceptCall(i)}
-                    >
-                      aceitar
-                    </button>
-                    <button
-                      className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
-                      onClick={() => call.refuseCall(i)}
-                    >
-                      recusar
-                    </button>
-                  </li>
+                {callManager.calls.map((incomingCall, i) => 
+                  {
+                    return incomingCall.isIncoming&&
+                    <li key={i} className="flex flex-row items-center space-x-2">
+                      <span>recebendo chamada: {incomingCall.name}</span>
+                      <button
+                        className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
+                        onClick={() => callManager.acceptCall(i)}
+                      >
+                        aceitar
+                      </button>
+                      <button
+                        className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
+                        onClick={() => callManager.refuseCall(i)}
+                      >
+                        recusar
+                      </button>
+                    </li>
+                  }
                 )}
               </ul>
             </div>

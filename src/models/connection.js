@@ -326,7 +326,17 @@ class Connection extends Notifier {
 
     _addMessage(sender, receiver, content, type) { 
         const msg = new Message(sender, receiver, content, type);
-        if(type !== MESSAGE_TYPES.CHUNK) {
+        //caso seja um arquivo o id da mesagem passa a ser o id do arquivo
+        switch(type) {
+            case MESSAGE_TYPES.FILE_META:
+            case MESSAGE_TYPES.FILE_ABORT:
+            case MESSAGE_TYPES.FILE_ERROR:
+            case MESSAGE_TYPES.CHUNK:
+                msg.id = content.id;
+                break;
+        }
+        //esses tipos de mensagens o usuario nao precisa ver
+        if(![MESSAGE_TYPES.CHUNK, MESSAGE_TYPES.FILE_ABORT, MESSAGE_TYPES.FILE_ERROR].includes(type)) {
             this.messages.push(msg); 
         }
         return msg;

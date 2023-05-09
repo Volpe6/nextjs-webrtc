@@ -3,6 +3,7 @@ import FileConstants from "./fileConstants";
 const fileReader = new FileReader();
 
 let stop = false;
+let aborted = false;
 
 //faz a leitura do arquivo e o envia como blocos, onde cada bloco é um arrayBUffer
 onmessage = function(e) {
@@ -10,7 +11,14 @@ onmessage = function(e) {
     const strategy = {
         stop: _ => stop = true,
         continue: _ => stop = false,
-        abort: _ => fileReader.abort(),
+        abort: _ => {
+            aborted = true;
+            fileReader.abort();
+            postMessage({
+                type: 'abort',
+                data: 'Leitura do arquivo abortado'
+            })
+        },
         start: file => {
             const receiveBuffer = [];
             let offset = 0;
@@ -44,6 +52,10 @@ onmessage = function(e) {
                 receiveBuffer.push(e.target.result);
                 offset += e.target.result.byteLength;
                 postMessage({ type: 'progress', data: (offset*100)/file.size });
+                
+                if(aborted) {
+                    return;
+                }
                 //se o arquivo nao foi completamente lido, le o proximo pedaço do arquivo
                 if (offset < file.size) {
                     readSlice(offset);

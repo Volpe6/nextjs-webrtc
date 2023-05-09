@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { CircularProgressbarWithChildren } from 'react-circular-progressbar';
+import { toast } from "react-toastify";
 
 function Message({ props }) {
-    const { id, sender, message, fileUpload } = props;
+    const { sender, message, fileUpload } = props;
     const downloadRef = useRef(null);
     const progressDivRef = useRef(null);
     const [downloadProgress, setDownloadProgress] = useState(null);
@@ -22,21 +23,21 @@ function Message({ props }) {
                             progressDivRef.current.innerHTML = progress;
                         }
                     },
-                    // error: error => toast(error),
-                    // abort: _ => toast('Envio do arquivo foi cancelado'),
-                    // metadata: data => {
-                    //     conn.send({
-                    //         type: MESSAGE_TYPES.FILE_META,
-                    //         message: data
-                    //     });
-                    // },
-                    // chunk: data => {
-                    //     //é feito isso para conseguir serializar
-                    //     conn.send({
-                    //         type: MESSAGE_TYPES.CHUNK,
-                    //         message: data
-                    //     });
-                    // },
+                    error: _ => {
+                        toast('erro')
+                        toast('cancelado')
+                        setDownloadProgress(0);
+                        if(progressDivRef.current) {
+                            progressDivRef.current.innerHTML = 'cancelado';
+                        }
+                    },
+                    abort: _ => {
+                        toast('cancelado')
+                        setDownloadProgress(0);
+                        if(progressDivRef.current) {
+                            progressDivRef.current.innerHTML = 'cancelado';
+                        }
+                    },
                     received: (id, metadata, file) => {
                         const downloadAnchor = downloadRef.current;
                         downloadAnchor.href = URL.createObjectURL(file);
@@ -54,14 +55,18 @@ function Message({ props }) {
             fileUpload.detachObserver(id);
         };
     }, [fileUpload]);
+
+    const handleCancel = () => {
+        fileUpload.abort();
+    }
     
     return (<>
-        <div id={id} className={`flex ${sender? 'items-end justify-end':'items-start justify-start'}`}>
+        <div className={`flex ${sender? 'items-end justify-end':'items-start justify-start'}`}>
             <div className={`rounded-lg p-2 ${sender?'bg-blue-500 text-white': 'bg-gray-100'}`}>
                 <p className="text-sm">{message}</p>
             </div>
             <div className="w-[15%]">
-                <a ref={downloadRef} >
+                <a ref={downloadRef} onClick={handleCancel} >
                     {
                         downloadProgress&&
                         <CircularProgressbarWithChildren value={downloadProgress}>
