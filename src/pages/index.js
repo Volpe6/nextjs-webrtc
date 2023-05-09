@@ -4,7 +4,7 @@ import useAuth from '../hook/useAuth';
 import useConnection from '../hook/useConnection';
 import Chat from '../components/chat';
 import useCall from '@/hook/useCall';
-import Connection from '@/components/connection';
+import Contact from '@/components/contact';
 
 
 export default function Home() {
@@ -170,7 +170,7 @@ export default function Home() {
                 {/* Apresentar os membros logados na sala */}
                 {connections.map((conn, i) => 
                   <li key={i} className="py-4">
-                    <Connection connection={conn} />
+                    <Contact connection={conn} />
                   </li>
                 )}
               </ul>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import useConnection from "@/hook/useConnection";
+import { FiPhoneCall, FiPhoneOff } from "react-icons/fi";
 
-function Connection({connection}) {
+function Contact({connection}) {
     const { callManager, connections, hangUp } = useConnection();
 
     const [connectionState, setConnectionState] = useState('desconectado');
@@ -44,18 +45,20 @@ function Connection({connection}) {
             </div>
             <div className="flex space-x-2 items-center justify-center">
                 <button 
-                    className="text-[6px] bg-green-500 text-white p-4 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="bg-green-500 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     onClick={handleCall} 
                 >
+                    <FiPhoneCall/>
                 </button>
                 <button 
-                    className="text-[6px] bg-red-500 text-white p-4 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="bg-red-500 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     onClick={handleHangUp} 
                 >
+                    <FiPhoneOff/>
                 </button>
             </div>
         </div>
     );
 }
 
-export default Connection;
+export default Contact;

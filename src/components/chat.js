@@ -48,6 +48,7 @@ function Chat() {
                 [MESSAGE_TYPES.TEXT]: (msg) => {},
                 [MESSAGE_TYPES.FILE_ABORT]: (msg) => {
                     const { message } = msg;
+                    toast(`${conn.name} cancelou transferencia do arquivo`);
                     fileManager.cancel(message);
                     fileManager.cancelFilesFromConnection(conn);
                 },

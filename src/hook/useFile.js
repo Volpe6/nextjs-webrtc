@@ -43,7 +43,21 @@ function useFile() {
         receiveFile.attachObserver({ 
             obs: async (event, ...args) => {
                 const actions = {
-                    end: id => removeFile(id)
+                    end: id => removeFile(id),
+                    error: id => {
+                        toast('falha no recebimento do arquivo');
+                        connection.send({
+                            type: MESSAGE_TYPES.FILE_ERROR,
+                            message: {id}
+                        });
+                    },
+                    abort: id => {
+                        toast('recebimento do arquivo foi cancelado');
+                        connection.send({
+                            type: MESSAGE_TYPES.FILE_ABORT,
+                            message: {id}
+                        });
+                    },
                 };
                 receiveFile.executeActionStrategy(actions, event, ...args);
             }
