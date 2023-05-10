@@ -5,6 +5,7 @@ import useConnection from '../hook/useConnection';
 import Chat from '../components/chat';
 import useCall from '@/hook/useCall';
 import Contact from '@/components/contact';
+import MediaControls from '@/components/mediaControls';
 
 
 export default function Home() {
@@ -58,7 +59,7 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex flex-row h-screen overflow-hidden">
+      <main className="relative flex flex-row h-screen overflow-hidden">
         <div className="flex flex-col justify-start w-1/4 bg-white border-r border-gray-200 px-8 py-6 min-w-[270px]">
           <div className="flex flex-row items-center mb-5">
             <h2 className="text-xl font-medium ">Meet</h2>
@@ -177,6 +178,7 @@ export default function Home() {
             </div>
         </div>
         {conn && <Chat />}
+        <MediaControls className="absolute" />
       </main>
     </>
   )
