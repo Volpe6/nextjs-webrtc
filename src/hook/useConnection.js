@@ -5,6 +5,7 @@ import Connection from "@/models/connection";
 import { toast } from "react-toastify";
 import useCall from "./useCall";
 import useFile from "./useFile";
+import { getDisplayMedia } from "@/utils/mediaStream";
 
 const ConnectionContext = createContext();
 
@@ -21,6 +22,8 @@ export const ConnectionProvider = ({ children }) => {
     const [connections, setConnections] = useState([]);
     const [currConnection, setCurrConnection] = useState(null);
     const [subscribed, setSubscribed] = useState(false);
+
+    const [displayStream, setDisplayStream] = useState(null);
 
     const { user } = useAuth();
     const callManager = useCall({ socket, connections, createConnection });
@@ -263,6 +266,8 @@ export const ConnectionProvider = ({ children }) => {
     }
 
     const toogleDisplay = async (opts) => {
+        // let a = await getDisplayMedia();
+        // setDisplayStream(a);
         if(!currConnection) {
             console.log('atuamente sem conexao');
             return;
@@ -316,6 +321,7 @@ export const ConnectionProvider = ({ children }) => {
             connections,
             callManager,
             fileManager,
+            displayStream,
             connectSocket,
             createConnection,
             removeConnection,

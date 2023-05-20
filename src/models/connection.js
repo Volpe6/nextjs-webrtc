@@ -256,19 +256,6 @@ class Connection extends Notifier {
         this.closePeer();
     }
 
-    /**
-     * Encaminha os evento do objeto atual para o objeto de destino
-     * @param {EventEmitter} target 
-     */
-    forwardEvents(target) {
-        const eventNames = Object.getOwnPropertyNames(this.events);
-        eventNames.forEach(eventName => {
-            target.on(eventName, (...args) => {
-                this.emit(eventName, ...args);
-            });
-        });
-    }
-
     async initPeer(userName) {
         try {
             this.peer = new Peer(this.polite);
