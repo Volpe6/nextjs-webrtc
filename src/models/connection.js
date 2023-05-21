@@ -264,9 +264,18 @@ class Connection extends Notifier {
             this.peer.attachObserver({
                 id: PEER_ID,
                 obs:async (event, ...args) => {
-                    switch(event) {
-                        case "connectionstatechange":
-                            const state = args[0];
+                    const actions = {
+                        // datachannelopen: async (conn, _) => {
+                        //     if(this.peer.channel.readyState === 'open') {
+                        //         await this.toogleAudio({ enabled:true });
+                        //     }
+                        // },
+                        // signalingstatechange: async (conn, state) => {
+                        //     if(this.polite && state === 'have-remote-offer') {
+                        //         await this.toogleAudio({ enabled:true });
+                        //     }
+                        // },
+                        connectionstatechange: (conn, state) => {
                             switch(state) {
                                 case "connecting":
                                 case "connected":
@@ -274,8 +283,9 @@ class Connection extends Notifier {
                                     this.retries = 0;
                                     break;
                             }
-                            break;
+                        }
                     }
+                    this.executeActionStrategy(actions, event, ...args);
                     this.emit(event, ...args);
                 }
             });
@@ -283,8 +293,9 @@ class Connection extends Notifier {
             throw new Error(`handlePeerConnection() error: ${e.toString()}`);
         }
         if(!this.polite) {
-            const audioStream = await this.toogleAudio({ enabled: true });
-            this.peer.addTransceiver({ id:'useraudio', trackOrKind: audioStream.getAudioTracks()[0], transceiverConfig:{direction: "sendrecv", streams:[audioStream]} });
+            // const audioStream = await this.toogleAudio({ enabled: true });
+            // this.peer.addTransceiver({ id:'useraudio', trackOrKind: audioStream.getAudioTracks()[0], transceiverConfig:{direction: "sendrecv", streams:[audioStream]} });
+            this.peer.addTransceiver({ id:'useraudio', trackOrKind: 'audio', transceiverConfig:{direction: "sendrecv"} });
             this.peer.addTransceiver({ id:'usercam', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
             this.peer.addTransceiver({ id:'display', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
         }

@@ -5,10 +5,11 @@ import Drag from "./drag";
 import Video from "./video";
 import useConnection from "@/hook/useConnection";
 import { useEffect } from "react";
+import AudioSpectrum from "./audioSpectrum";
 
-function MediaControls({connection, children}) {
+function MediaControls({connection, userAudioStream, children}) {
     
-    const { displayStream } = useConnection();
+    // const { displayStream } = useConnection();
 
     // useEffect(()=> {
     //     alert('udo')
@@ -31,7 +32,7 @@ function MediaControls({connection, children}) {
                     top: props.position.y
                 }}
             >
-                <div className="flex space-x-1">
+                <div className="relative flex space-x-1">
                     <div 
                         onMouseDown={props.handleMouseDown} 
                         onMouseMove={props.handleMouseMove}
@@ -42,11 +43,7 @@ function MediaControls({connection, children}) {
                     <div>
                         <div className="relative">
                             { children }
-                            {/* {displayStream&&<Video stream={displayStream} />} */}
-                            {/* <Video /> */}
-                            {/* <video className="absolute bottom-0" autoPlay loop={true} width={100}>
-                                <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4"/>
-                            </video> */}
+                            <div className="absolute bottom-0"><AudioSpectrum audioStream={userAudioStream} /></div>
                         </div>
                         <div className="text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
                             <BiMicrophone/><BsCameraVideo/><MdOutlineScreenShare />

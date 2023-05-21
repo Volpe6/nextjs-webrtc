@@ -71,9 +71,6 @@ export const ConnectionProvider = ({ children }) => {
         }
         async function onSignalingStateChange(conn, state) {
             console.log('signalingstatechange', state);
-            if(conn.polite && state === 'have-remote-offer') {
-                await conn.toogleAudio({ enabled:true });
-            }
         }
         function onNegotiation(conn, description) {
             console.log(`emitindo negociação para: ${conn.peer.target}`);

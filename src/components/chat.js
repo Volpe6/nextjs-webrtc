@@ -85,9 +85,9 @@ function Chat() {
             // };
         }
         function onClose(conn, _) {
-            audioRef.current.srcObject = null;
-            videoRef.current.srcObject = null;
-            displayRef.current.srcObject = null;
+            // audioRef.current.srcObject = null;
+            // videoRef.current.srcObject = null;
+            // displayRef.current.srcObject = null;
         }
         function onDataChannelError(conn, _) {
             fileManager.cancelFilesFromConnection(conn);
@@ -110,7 +110,7 @@ function Chat() {
         return () => {
             conn.detachObserver(id);
         }
-    }, [fileManager]);
+    }, [fileManager, mediaManager]);
 
     return (<>
         <div className="relative flex items-center justify-center w-full drag-area">
@@ -136,7 +136,8 @@ function Chat() {
                 <MessageArea connection={conn}/>
             </div>
 
-            <MediaControls className="absolute">
+            {/* <MediaControls userAudioStream={mediaManager.get(`${user.name}-media`)?mediaManager.get(`${user.name}-media`).medias[DISPLAY_TYPES.USER_AUDIO].stream:null}> */}
+            <MediaControls>
                 <div className="relative">
                     <Row>
                         {mediaManager.getMedias().map((userMedia) => {
