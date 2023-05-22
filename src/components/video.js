@@ -6,7 +6,11 @@ function Video({stream, width, fullScreenFunction}) {
 
     useEffect(() => {
         if(stream && videoRef.current) {
-            videoRef.current.srcObject = stream;
+            try {
+                videoRef.current.srcObject = stream;
+            } catch (error) {
+                console.log('nao foi possivel atribuir a stream a tag video');
+            }
         }
     }, [stream]);
 
@@ -19,12 +23,11 @@ function Video({stream, width, fullScreenFunction}) {
     }
 
     return (<>
-        <div className="relative">
+        <div className="relative" onClick={fullScreenFunction}>
             <div className="absolute text-[2em]">
                 <BiCollapse className="text-pink-600" />
             </div>
             <video 
-                onClick={fullScreenFunction}
                 ref={videoRef}
                 onResize={handleResize} 
                 onLoadedMetadata={handleLoadMetadata} 

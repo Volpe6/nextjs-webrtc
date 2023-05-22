@@ -16,6 +16,8 @@ function MessageArea({ connection: conn }) {
     const audioRef = useRef(null);
     const videoRef = useRef(null);
     const displayRef = useRef(null);
+    
+    const [count, setCount] = useState(0);
 
     useEffect(() => {
         async function onDataChannelMessage(conn, content) {
@@ -54,29 +56,6 @@ function MessageArea({ connection: conn }) {
             }
         }
         
-        function onTrack(conn, event) {
-            console.log('lidando com track')
-            console.log(`track`, event);
-            const { transceiver, track, streams } = event;
-            const trv = conn.peer.retriveTransceiver({displayType: DISPLAY_TYPES.DISPLAY});
-            let mediaRef = transceiver.mid == trv.mid? displayRef.current: videoRef.current;
-            if(track.kind === 'audio') {
-                mediaRef = audioRef.current;
-            }
-            track.onmute = () => {
-                mediaRef.srcObject = null;
-            };
-            track.onunmute = () => {
-                if (mediaRef.srcObject || streams.length == 0) {
-                    return;
-                }
-                if(track.kind === 'audio') {
-                    mediaRef.srcObject = new MediaStream([streams[0].getAudioTracks()[0]]);
-                    return;
-                }
-                mediaRef.srcObject = new MediaStream([streams[0].getVideoTracks()[0]]);
-            };
-        }
         function onClose(conn, _) {
             audioRef.current.srcObject = null;
             videoRef.current.srcObject = null;
@@ -93,8 +72,6 @@ function MessageArea({ connection: conn }) {
                 const actions = {
                     datachannelerror: onDataChannelError,
                     datachannelmessage: onDataChannelMessage,
-                    track: onTrack,
-                    close: onClose
                 };
                 conn.executeActionStrategy(actions, event, ...args);
             }

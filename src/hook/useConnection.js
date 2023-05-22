@@ -28,7 +28,7 @@ export const ConnectionProvider = ({ children }) => {
     const { user } = useAuth();
     const callManager = useCall({ socket, connections, createConnection });
     const fileManager = useFile();
-    
+
     useEffect(() => {
         async function connect(opts) {
             const { conn } = opts;
@@ -251,7 +251,7 @@ export const ConnectionProvider = ({ children }) => {
             console.log('atuamente sem conexao');
             return;
         }
-        await currConnection.toogleAudio(opts);
+        return await currConnection.toogleAudio(opts);
     }
 
     const toogleCamera = async (opts) => {
@@ -259,17 +259,15 @@ export const ConnectionProvider = ({ children }) => {
             console.log('atuamente sem conexao');
             return;
         }
-        await currConnection.toogleCamera(opts);
+        return await currConnection.toogleCamera(opts);
     }
 
     const toogleDisplay = async (opts) => {
-        // let a = await getDisplayMedia();
-        // setDisplayStream(a);
         if(!currConnection) {
             console.log('atuamente sem conexao');
             return;
         }
-        await currConnection.toogleDisplay(opts);
+        return await currConnection.toogleDisplay(opts);
     }
 
     const hangUp = (opts) => {

@@ -30,19 +30,19 @@ export default function Home() {
     return;
   }
 
-  useEffect(() => {
-        if(displayStream) {
-          setCrrStream([...currStream, new MediaStream(displayStream.getTracks())]);
-        }
-    }, [displayStream]);
+  // useEffect(() => {
+  //       if(displayStream) {
+  //         setCrrStream([...currStream, new MediaStream(displayStream.getTracks())]);
+  //       }
+  //   }, [displayStream]);
 
-    const setFullScreen = (index) => {
-      console.log('aqui');
-      const prevCrr = [...currStream]
-      const stream = prevCrr.splice(index, 1);
-      setCrrStream([]);
-      setStreamFullScreen([...streamFullScreen, stream[0]]);
-    }
+  //   const setFullScreen = (index) => {
+  //     console.log('aqui');
+  //     const prevCrr = [...currStream]
+  //     const stream = prevCrr.splice(index, 1);
+  //     setCrrStream([]);
+  //     setStreamFullScreen([...streamFullScreen, stream[0]]);
+  //   }
   
   // useEffect(() => {
   //   if(userStream) {
@@ -135,7 +135,7 @@ export default function Home() {
               {/* Ações possíveis de serem realizadas durante a call */}
               {/*Estou usando os próprios ícones do tailwind mas achei o svg meio grande. Dá pra mudar futuramente */}
               <div className="flex flex-row justify-center items-center mb-2 space-x-2">
-                <button title="Mute/Desmute Microphone" className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                {/* <button title="Mute/Desmute Microphone" className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
                   <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="css-i6dzq1">
                     <polyline points="15 3 21 3 21 9"></polyline>
                     <polyline points="21 15 21 9 15 9"></polyline>
@@ -158,10 +158,10 @@ export default function Home() {
                     <path d="M1 1l22 22M1 23L23 1"></path>
                   </svg>
 
-                </button>
-                <button onClick={toogleCamera}>compartilha camera</button>
+                </button> */}
+                {/* <button onClick={toogleCamera}>compartilha camera</button>
                 <button onClick={toogleDisplay}>compartilha tela</button>
-                <button onClick={toogleAudio}>audio</button>
+                <button onClick={toogleAudio}>audio</button> */}
               </div>
 
             </div>

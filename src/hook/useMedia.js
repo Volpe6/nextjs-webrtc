@@ -6,15 +6,12 @@ function useMedia() {
 
     const update = (id, media) => {
         let crrUserMedia = userMedias[id];
-        console.log('media atual antes if', crrUserMedia);
         if(!crrUserMedia) {
             crrUserMedia = {
                 id: id,
                 medias: {}
             };
         }
-        console.log('media atual depois if', crrUserMedia);
-        console.log('media', media);
         crrUserMedia.medias[media.type] = media;
         setUserMedias({
             ...userMedias,

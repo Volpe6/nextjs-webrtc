@@ -163,7 +163,7 @@ class Connection extends Notifier {
      * Compartilha o audio d usuario. Se o audio ja estiver sendo compartilhada para o compartilhamento.
      * tenta utilizar a stream ja existente so adicionando os track ausentes 
      */
-    async toogleAudio(opts) {
+    async toogleAudio(opts={enabled:null}) {
         const { enabled } = opts;
         return await this.toogleUserTrack({
             mediaType: 'audio',
@@ -178,7 +178,7 @@ class Connection extends Notifier {
      * Ao contrario do codigo do compartilhamento da tela, nesse caso tenta utilizar a stream ja existente 
      * so adicionando os track ausentes 
      */
-    async toogleCamera(opts) {
+    async toogleCamera(opts={enabled:null}) {
         const { enabled } = opts;
         return await this.toogleUserTrack({
             mediaType: 'video',
@@ -188,7 +188,7 @@ class Connection extends Notifier {
         });
     }
 
-    async toogleDisplay(opts) {
+    async toogleDisplay(opts={onended:null}) {
         const { onended, enabled } = opts;
         const data = { mediaType: 'video' };
         if(this.displayStream) {
@@ -275,6 +275,18 @@ class Connection extends Notifier {
                         //         await this.toogleAudio({ enabled:true });
                         //     }
                         // },
+                        // track: (_) => {
+                        //     console.log('track dentro connection');
+                        // },
+                        // datachannelopen: (conn, _) => {
+                        //     if(this.peer.channel.readyState === 'open') {
+                        //         if(!this.polite) {
+                        //             this.peer.addTransceiver({ id:'useraudio', trackOrKind: 'audio', transceiverConfig:{direction: "sendrecv"} });
+                        //             this.peer.addTransceiver({ id:'usercam', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
+                        //             this.peer.addTransceiver({ id:'display', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
+                        //         }
+                        //     }
+                        // },
                         connectionstatechange: (conn, state) => {
                             switch(state) {
                                 case "connecting":
@@ -295,6 +307,7 @@ class Connection extends Notifier {
         if(!this.polite) {
             // const audioStream = await this.toogleAudio({ enabled: true });
             // this.peer.addTransceiver({ id:'useraudio', trackOrKind: audioStream.getAudioTracks()[0], transceiverConfig:{direction: "sendrecv", streams:[audioStream]} });
+            // await this.peer.createOffer();
             this.peer.addTransceiver({ id:'useraudio', trackOrKind: 'audio', transceiverConfig:{direction: "sendrecv"} });
             this.peer.addTransceiver({ id:'usercam', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
             this.peer.addTransceiver({ id:'display', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });

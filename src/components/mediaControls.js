@@ -4,25 +4,10 @@ import { BiMicrophone, BiMicrophoneOff } from "react-icons/bi";
 import Drag from "./drag";
 import Video from "./video";
 import useConnection from "@/hook/useConnection";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AudioSpectrum from "./audioSpectrum";
 
-function MediaControls({connection, userAudioStream, children}) {
-    
-    // const { displayStream } = useConnection();
-
-    // useEffect(()=> {
-    //     alert('udo')
-    // }, [displayStream]);
-    // const displayRef = useRef(null);
-
-    // useEffect(() => {
-    //     if(displayStream && displayRef.current) {
-    //         displayStream.current.srcObject = displayStream;
-    //     }
-    // }, [displayStream]);
-
-
+function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, children}) {
     return (
         <Drag render={props=>(
             <div 
@@ -42,11 +27,11 @@ function MediaControls({connection, userAudioStream, children}) {
                     </div>
                     <div>
                         <div className="relative">
-                            { children }
-                            <div className="absolute bottom-0"><AudioSpectrum audioStream={userAudioStream} /></div>
+                            {children}
+                            <div className="absolute bottom-0"><AudioSpectrum audioStream={audioStream} /></div>
                         </div>
                         <div className="text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
-                            <BiMicrophone/><BsCameraVideo/><MdOutlineScreenShare />
+                            <BiMicrophone onClick={handleAudio}/><BsCameraVideo onClick={handleCam}/><MdOutlineScreenShare onClick={handleDisplay}/>
                         </div>
                     </div>
                 </div>
