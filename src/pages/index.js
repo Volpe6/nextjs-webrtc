@@ -124,12 +124,6 @@ export default function Home() {
                 >
                   call
                 </button>
-                <button
-                  className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
-                  onClick={getAudio}
-                >
-                  audio
-                </button>
                 <video ref={displayRef} playsInline autoPlay></video>
               </div>
               {/* Ações possíveis de serem realizadas durante a call */}

@@ -121,7 +121,7 @@ function Chat() {
         return () => {
             conn.detachObserver(id);
         }
-    }, [fileManager]);
+    }, []);
 
     const update = (id, type, media) => {
         let crrUserMedia = prevUserMedias.current[id];
