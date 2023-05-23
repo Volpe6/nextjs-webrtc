@@ -17,7 +17,7 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                     top: props.position.y
                 }}
             >
-                <div className="relative flex space-x-1">
+                <div className="flex space-x-1">
                     <div 
                         onMouseDown={props.handleMouseDown} 
                         onMouseMove={props.handleMouseMove}
@@ -28,9 +28,9 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                     <div>
                         <div className="relative">
                             {children}
-                            <div className="absolute bottom-0"><AudioSpectrum audioStream={audioStream} /></div>
+                            <div className="absolute pointer-events-none bottom-0"><AudioSpectrum audioStream={audioStream} /></div>
                         </div>
-                        <div className="text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
+                        <div className="relative text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
                             <BiMicrophone onClick={handleAudio}/><BsCameraVideo onClick={handleCam}/><MdOutlineScreenShare onClick={handleDisplay}/>
                         </div>
                     </div>

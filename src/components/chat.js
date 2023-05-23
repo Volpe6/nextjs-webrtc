@@ -261,7 +261,7 @@ function Chat() {
                                         userCamMedia.stream&&
                                         <Video 
                                             stream={userCamMedia.stream} 
-                                            width={hasDisplay?150:200} 
+                                            width={hasDisplay?75:200} 
                                             fullScreenFunction={() => toogleFullScreen(userMedia.id, DISPLAY_TYPES.USER_CAM)}
                                         />
                                     }
@@ -269,7 +269,7 @@ function Chat() {
                                         !isRoot&&
                                         userAudioMedia&&
                                         userAudioMedia.stream&&
-                                        <div className="absolute top-0 left-0">
+                                        <div className="absolute top-0 left-0 pointer-events-none">
                                             <AudioSpectrum audioStream={userAudioMedia.stream} visualizer="arc" useAudioTag={true}/>
                                         </div>
                                     }
