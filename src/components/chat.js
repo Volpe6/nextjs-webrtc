@@ -25,6 +25,7 @@ function Chat() {
      */
     const prevUserMedias = useRef({});
     const [userMedias, setUserMedias] = useState({});
+    const [showChatArea, setShowChatArea] = useState(true);
     
     const [audioStream, setAudioStream] = useState(null);
     const [camStream, setCamStream] = useState(null);
@@ -160,10 +161,23 @@ function Chat() {
             media.isFullScreen = !media.isFullScreen;
             newUserMedias[id] = crrUserMedia;
         }
+        if(!hasFullScreen()) {
+            setShowChatArea(true);
+        } else {
+            setShowChatArea(false);
+        }
         setUserMedias(newUserMedias);
     }
 
     const hasFullScreen = () => getMedias().find(userMedia=> Object.values(userMedia.medias).find(media=>media&&media.isFullScreen));
+
+    const handleChat = () => {
+        if(!hasFullScreen()) {
+            setShowChatArea(true);
+            return;
+        }
+        setShowChatArea(prev => !prev);
+    }
 
     const handleAudio = async () => {
         const stream = await toogleAudio();
@@ -216,15 +230,16 @@ function Chat() {
                 </div>
             }
 
-            {/* <div className={`w-full ${mediaManager.hasFullScreen()&&'hidden'}`}> */}
+            <div className={`w-full ${!showChatArea&&'hidden'}`}>
                 <MessageArea connection={conn}/>
-            {/* </div> */}
+            </div>
 
             <MediaControls
                 audioStream={audioStream}
                 handleAudio={handleAudio}
                 handleCam={handleCam}
                 handleDisplay={handleDisplay}
+                handleChat={handleChat}
             >
                 <div className="relative">
                     <Row>

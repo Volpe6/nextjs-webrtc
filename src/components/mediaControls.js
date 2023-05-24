@@ -1,5 +1,5 @@
 import { MdDragIndicator, MdOutlineScreenShare, MdOutlineStopScreenShare } from "react-icons/md";
-import { BsCameraVideo, BsCameraVideoOff } from "react-icons/bs";
+import { BsCameraVideo, BsCameraVideoOff, BsChatLeftDots } from "react-icons/bs";
 import { BiMicrophone, BiMicrophoneOff } from "react-icons/bi";
 import Drag from "./drag";
 import Video from "./video";
@@ -7,7 +7,7 @@ import useConnection from "@/hook/useConnection";
 import { useEffect, useState } from "react";
 import AudioSpectrum from "./audioSpectrum";
 
-function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, children}) {
+function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, handleChat, children}) {
     return (
         <Drag render={props=>(
             <div 
@@ -31,7 +31,10 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                             <div className="absolute pointer-events-none bottom-0"><AudioSpectrum audioStream={audioStream} /></div>
                         </div>
                         <div className="relative text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
-                            <BiMicrophone onClick={handleAudio}/><BsCameraVideo onClick={handleCam}/><MdOutlineScreenShare onClick={handleDisplay}/>
+                            <BiMicrophone onClick={handleAudio}/>
+                            <BsCameraVideo onClick={handleCam}/>
+                            <MdOutlineScreenShare onClick={handleDisplay}/>
+                            <BsChatLeftDots onClick={handleChat}/>
                         </div>
                     </div>
                 </div>
