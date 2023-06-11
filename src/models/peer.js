@@ -21,6 +21,8 @@ class Peer extends Notifier {
         this.makingOffer = false;
         this.ignoreOffer = false;
         this.clearingQueue = false;
+        this.iceCandidates = [];
+        this.isReady = false;//indica se ja recebeu a description
         /**
          * adicionei essa variavel para a quantidade de tentativas de negociaçao estavam acontecendo.
          * Isso foi feito pq existe um fluxo q faz com a negociaçao entre em loop, e fique enviando negociaçoes infinitas sem nunca abrir o canal de comunicaçao. Para controlar isso estabeleci uma quantidade maxima de tentativas de negociaçao, caso a quantidade maxima seja atingida, o peer atual é fechado e a reconexão é tentada novamente com outro peer.
@@ -40,9 +42,8 @@ class Peer extends Notifier {
         this.pc.onicecandidate = event => this._onIceCandidate(event);
         this.pc.onconnectionstatechange = event => this._onConnectionStateChange(event);
         this.pc.oniceconnectionstatechange = event => this._onIceconnectionStateChange(event);
-        this.pc.onnegotiationneeded = event => this._onNegotiationNeeded();
         this.pc.onsignalingstatechange = event => this._onSignalingStateChange(event);
-        this.pc.ondatachannel = null;
+        this.pc.ondatachannel = event => this._onReceiveDataChannel(event);
 
         this.channel = null;
         this.channelName = null;
@@ -101,6 +102,7 @@ class Peer extends Notifier {
             this.channel.onerror = null;
         }
         if(this.pc) {
+            this.pc.onnegotiationneeded = null;
             this.pc.oniceconnectionstatechange = null;
             this.pc.onicegatheringstatechange = null;
             this.pc.onsignalingstatechange = null;
@@ -124,6 +126,11 @@ class Peer extends Notifier {
                 this.emit('error', `Peer ${this.name} >> Failed to add icecandidate: ${error.toString()}`);
             }
         }
+    }
+
+    sendPendentIce() {
+        /**teria outra forma de fazer isso, usando o getStats e obtendo os ice. Da pra dar uma olahda no simple peer */
+        this.iceCandidates.forEach(candidate => this.emit('icecandidate', candidate));
     }
 
     send(data) {
@@ -247,8 +254,8 @@ class Peer extends Notifier {
             this.emit('retryconnection');
         }
     }
-    
-    async createAnswer(opts) {
+
+    async receiveOffer(opts) {
         if(!this.pc) {
             throw new Error('nao pode criar uma resposta sem um objeto rtciniciado');
         }
@@ -256,24 +263,37 @@ class Peer extends Notifier {
             this.emit('info', `Peer ${this.name} >> Não é necessário criar a oferta com conexão no estado: ${this.pc.connectionState}`);
             return;
         }
-        if (!['have-local-pranswer', 'have-remote-offer'].includes(this.pc.signalingState)) {
-            /**
-             * A resposta so pode ser criada quando rtcpeerconection estiver em:have-remote-offer or have-local-pranswer
-             */
-            this.emit('info', `Peer ${this.name} >> uma oferta remota ainda nao foi recebida`);
-            return;
-        }
+        opts = Object.assign({options:{}}, opts);
         try {
-            const answer = await this.pc.createAnswer(opts);
+            const { description, options } = opts;
+            await this.pc.setRemoteDescription(description);
+            const answer = await this.pc.createAnswer(options);
             this.emit('info', `Peer ${this.name} >> criada resposta`);
             await this.pc.setLocalDescription(answer);
-            this.emit('negotiation', answer);
+            this.isReady = true;
+            this.emit('answer', answer);
+            //se envia logo em seguida parece nao conseguir lidar direito
+            this.emit('peerready');
         } catch (error) {
             this.emit('error', `Peer ${this.name} >> Failed to create session description(answer): ${error.toString()}`);
         }
     }
 
-    async createOffer(opts={}) {
+    async receiveAnswer(opts={}) {
+        opts = Object.assign({options:{}}, opts);
+        try {
+            const { description } = opts;
+            await this.pc.setRemoteDescription(description);
+            this.isReady = true;
+            this.emit('peerready');
+        } catch (error) {
+            console.error(error);
+            this.emit('error', `Peer ${this.name} >> Failed to create session description(Answer): ${error.toString()}`);
+        }
+    }
+    
+    async createOffer(opts) {
+        console.log('criando oferta')
         if(!this.pc) {
             throw new Error('nao pode criar uma resposta sem um objeto rtciniciado');
         }
@@ -281,12 +301,16 @@ class Peer extends Notifier {
             this.emit('info', `Peer ${this.name} >> Não é necessário criar a oferta com conexão no estado: ${this.pc.connectionState}`);
             return;
         }
+        opts = Object.assign({options:{}}, opts);
         try {
-            const offer = await this.pc.createOffer(opts);
+            const { options } = opts;
+            this._createDataChannel();
+            const offer = await this.pc.createOffer(options);
             this.emit('info', `Peer ${this.name} >> criada oferta`);
             await this.pc.setLocalDescription(offer);
-            this.emit('negotiation', offer);
+            this.emit('offer', offer);
         } catch (error) {
+            console.log('ereer');
             console.error(error);
             this.emit('error', `Peer ${this.name} >> Failed to create session description(offer): ${error.toString()}`);
         }
@@ -367,7 +391,12 @@ class Peer extends Notifier {
 
     _onIceCandidate({candidate}) {
         if(candidate != null) {
-            this.emit('icecandidate', candidate);
+            if(this.isReady) {
+                //se ainda nao foi obtido todos os candidatos, envia os q faltam
+                this.emit('icecandidate', candidate);
+            }
+            this.iceCandidates.push(candidate);
+            this.emit('info', `Peer ${this.name} >> ice candidates obeteined`);
             return;
         }
         this.emit('info', `Peer ${this.name} >> all ice candidates obeteined`);
@@ -389,6 +418,7 @@ class Peer extends Notifier {
     _onConnectionStateChange(event) {
         if(this.pc.connectionState === 'connected') {
             this.negotiationAttempts = 0;
+            this.pc.onnegotiationneeded = event => this._onNegotiationNeeded();
         }
         this.emit('connectionstatechange', this.pc.connectionState);
     }

@@ -3,7 +3,6 @@ import Peer, { DISPLAY_TYPES } from "./peer";
 import User from "./user";
 import { getDisplayMedia, getUserMedia } from '../utils/mediaStream';
 import { toast } from "react-toastify";
-import EventEmitter from './eventEmitter';
 import Notifier from './notifier';
 
 const MAX_RETRIES = 5;
@@ -53,21 +52,9 @@ class Connection extends Notifier {
             if(this.peer && this.peer.pc && ['connecting', 'connected'].includes(this.peer.pc.connectionState)) {
                 break;
             }
-            await toast.promise(
-                new Promise(async resolve => {
-                    if(this.peer) {
-                        this.closePeer();
-                    }
-                    await this.initPeer(userName);
-                    await new Promise(resolve => setTimeout(resolve, TIMEOUT));
-                    resolve();
-                }),
-                {
-                    pending: `tentatia de reconexão nº ${this.retries+1}. Para o usuário:${this.user.name}`,
-                    success: `não foi possivel conecatar ao usuário ${this.user.name}. tentando novamente`,
-                    error: 'erro na tentativa. tentando novamente'
-                }
-            );
+            toast.info(`tentatia de conexão nº ${this.retries+1}. Para o usuário:${this.user.name}`);
+            await this.initPeer(userName);
+            await new Promise(resolve => setTimeout(resolve, TIMEOUT));
             this.retries++;
         }
         this.tryingConnect = false;
@@ -307,10 +294,11 @@ class Connection extends Notifier {
         if(!this.polite) {
             // const audioStream = await this.toogleAudio({ enabled: true });
             // this.peer.addTransceiver({ id:'useraudio', trackOrKind: audioStream.getAudioTracks()[0], transceiverConfig:{direction: "sendrecv", streams:[audioStream]} });
-            // await this.peer.createOffer();
+            /**com o padrao de negociação perfeita no momento que um transiver é adicionado a negociação é disparada e tenta-se estabelecer uma conexão */
             this.peer.addTransceiver({ id:'useraudio', trackOrKind: 'audio', transceiverConfig:{direction: "sendrecv"} });
             this.peer.addTransceiver({ id:'usercam', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
             this.peer.addTransceiver({ id:'display', trackOrKind:'video', transceiverConfig:{direction: "sendrecv"} });
+            await this.peer.createOffer();
         }
         return this.peer;
     }

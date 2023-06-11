@@ -80,6 +80,30 @@ export const ConnectionProvider = ({ children }) => {
                 data: description
             });
         }
+        function onOffer(conn, description) {
+            console.log(`onoffer`);
+            console.log(`emitindo oferta para: ${conn.peer.target}`);
+            socket.emit('offer', {
+                name: conn.peer.name,
+                target: conn.peer.target,
+                data: description
+            });
+        }
+        function onAnswer(conn, description) {
+            console.log(`emitindo resposta para: ${conn.peer.target}`);
+            socket.emit('answer', {
+                name: conn.peer.name,
+                target: conn.peer.target,
+                data: description
+            });
+        }
+        function onPeerReady(conn) {
+            console.log(`sinalizando que o peer esta pronto para: ${conn.peer.target}`);
+            socket.emit('peerready', {
+                name: conn.peer.name,
+                target: conn.peer.target
+            });
+        }
         function onIceCandidate(conn, candidate) {
             console.log('emitindo icecandidate');
             socket.emit('ice-candidate', {
@@ -104,12 +128,16 @@ export const ConnectionProvider = ({ children }) => {
                         connectionstatechange: onConnectionStateChange,
                         signalingstatechange: onSignalingStateChange,
                         negotiation: onNegotiation,
+                        offer: onOffer,
+                        answer: onAnswer,
+                        peerready: onPeerReady,
                         icecandidate: onIceCandidate
                     }
                     conn.executeActionStrategy(actions, event, ...args);
                 }
             });
-            await connect({conn: conn});
+            //se chama logo em seguida a primeira vez nunca funciona, fazendo com que se conecte geralmente na segunda vez
+            setTimeout(async () => await connect({conn: conn}), 500);
         });
         return () => {
             connections.forEach(conn => {
@@ -187,14 +215,49 @@ export const ConnectionProvider = ({ children }) => {
                 console.log('recebeu uma negociacao mas nao possui uma conexão rtc iniciada');
                 return;
             }
-            // target.polite = content.polite;
             console.log(`processando negociação de: ${content.name}`);
             target.peer.treatNegotiation(content);
+        }
+
+        function onOffer(content) {
+            const target = findConnection(content.name);
+            if(!target || !target.peer) {
+                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+                return;
+            }
+            console.log(`processando oferta de: ${content.name}`);
+            const offer = content.data;
+            target.peer.receiveOffer({ description:offer });
+            
+        }
+
+        function onAnswer(content) {
+            const target = findConnection(content.name);
+            if(!target || !target.peer) {
+                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+                return;
+            }
+            console.log(`processando resposta de: ${content.name}`);
+            const answer = content.data;
+            target.peer.receiveAnswer({ description:answer });
+        }
+        
+        function onPeerReady(content) {
+            const target = findConnection(content.name);
+            if(!target || !target.peer) {
+                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+                return;
+            }
+            console.log(`peer: ${content.name}. Pronto`);
+            target.peer.sendPendentIce();
         }
 
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('negotiation', onNegotiation);
+        socket.on('offer', onOffer);
+        socket.on('answer', onAnswer);
+        socket.on('peerready', onPeerReady);
         socket.on('ice-candidate', onIceCandidate);
         socket.on('subscribed', onSubscribed);
         socket.on('hangup', onHangup);
@@ -210,6 +273,9 @@ export const ConnectionProvider = ({ children }) => {
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
             socket.off('negotiation', onNegotiation);
+            socket.off('offer', onOffer);
+            socket.off('answer', onAnswer);
+            socket.off('peerready', onPeerReady);
             socket.off('ice-candidate', onIceCandidate);
             socket.off('subscribed', onSubscribed);
             socket.off('hangup', onHangup);
@@ -218,7 +284,6 @@ export const ConnectionProvider = ({ children }) => {
     }, [socket, user, connections]);
 
     function createConnection(opts) {
-        console.log('polite', opts);
         socket.emit('polite', {name: user.name, target: opts.targetName});
     }
 
