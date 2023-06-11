@@ -214,8 +214,6 @@ class Peer extends Notifier {
     /**
      * Nessa implementaçao de conexao webrtc foi utilizado o padrao de negociaçao perfeita
      * https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Perfect_negotiation
-     * 
-     * Na implementaçao q foi feita nesse projeto nao é necessario chamar diretamente o createOffer e createAnswer, o padrao de negociaçao ja lida com isso
      */
     async treatNegotiation(content) {
         const description  = content.data;
