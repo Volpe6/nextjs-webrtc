@@ -83,6 +83,8 @@ class Peer extends Notifier {
 
     close() {
         this.negotiationAttempts = 0;
+        this.iceCandidates = [];
+        this.isReady = false;
         try {
             if(this.channel && (this.channel.readyState !== 'closed' && this.channel.readyState !== 'closing')) {
                 this.channel.close();

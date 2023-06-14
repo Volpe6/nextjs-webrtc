@@ -94,7 +94,7 @@ function Chat() {
         return () => {
             conn.detachObserver(id);
         }
-    }, []);
+    }, [conn]);
 
     useEffect(() => {
         function onClose(conn, _) {
@@ -231,7 +231,7 @@ function Chat() {
             }
 
             <div className={`w-full ${!showChatArea&&'hidden'}`}>
-                <MessageArea connection={conn}/>
+                <MessageArea/>
             </div>
 
             <MediaControls

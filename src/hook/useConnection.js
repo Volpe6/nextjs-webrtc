@@ -5,6 +5,7 @@ import Connection from "@/models/connection";
 import { toast } from "react-toastify";
 import useCall from "./useCall";
 import useFile from "./useFile";
+import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { getDisplayMedia } from "@/utils/mediaStream";
 
 const ConnectionContext = createContext();
@@ -30,10 +31,6 @@ export const ConnectionProvider = ({ children }) => {
     const fileManager = useFile();
 
     useEffect(() => {
-        async function connect(opts) {
-            const { conn } = opts;
-            await conn.tryConnect({userName:user.name});
-        }
         
         function onClose(conn, _) {}
         function onError(conn, errMessage) {toast.error(errMessage)}
@@ -112,7 +109,40 @@ export const ConnectionProvider = ({ children }) => {
                 data: candidate
             });
         }
-        
+        async function onDataChannelMessage(conn, content) {
+            const msgStrategy = {
+                [MESSAGE_TYPES.TEXT]: (msg) => {},
+                [MESSAGE_TYPES.FILE_ABORT]: (msg) => {
+                    const { message } = msg;
+                    toast(`${conn.name} cancelou transferencia do arquivo`);
+                    fileManager.cancel(message);
+                    fileManager.cancelFilesFromConnection(conn);
+                },
+                [MESSAGE_TYPES.FILE_ERROR]: (msg) => {
+                    const { message } = msg;
+                    fileManager.cancel(message);
+                },
+                [MESSAGE_TYPES.FILE_META]: (msg) => {
+                    const { message } = msg;
+                    fileManager.receiveFile(conn, message);
+                },
+                [MESSAGE_TYPES.CHUNK]: (msg) => {
+                    const { message } = msg;
+                    fileManager.receiveChunk(message);
+                },
+            }
+            try {
+                const message = JSON.parse(content.data);
+                console.log(message);
+                const chosenMessageStrategy = msgStrategy[message.type];
+                if(chosenMessageStrategy) {
+                    chosenMessageStrategy(message);
+                    conn.receive(message);
+                }
+            } catch (error) {
+                console.log('nao foi possivel dar parse na mensagem');
+            }
+        }
         connections.forEach(async conn => {
             conn.attachObserver({
                 id: `connection-${conn.name}`,
@@ -125,6 +155,7 @@ export const ConnectionProvider = ({ children }) => {
                         connectionfailed: onConnectionFailed,
                         retryconnection: onRetryConnection,
                         datachannelopen: onDataChannelOpen,
+                        // datachannelmessage: onDataChannelMessage,
                         connectionstatechange: onConnectionStateChange,
                         signalingstatechange: onSignalingStateChange,
                         negotiation: onNegotiation,
@@ -137,7 +168,7 @@ export const ConnectionProvider = ({ children }) => {
                 }
             });
             //se chama logo em seguida a primeira vez nunca funciona, fazendo com que se conecte geralmente na segunda vez
-            setTimeout(async () => await connect({conn: conn}), 500);
+            // setTimeout(async () => await connect({conn: conn}), 500);
         });
         return () => {
             connections.forEach(conn => {
@@ -151,19 +182,11 @@ export const ConnectionProvider = ({ children }) => {
             return;
         }
 
-        function findConnection(name) {
-            const target = connections.find(target => target.name == name);
-            if(target) {
-                return target;
-            }
-            return null;
-        }
-
         const createConn = async (opts) => {
             const prevConn = findConnection(opts.targetName);
             if(prevConn) {
-                toast.warning(`conexao para user ${opts.targetName} ja existe. tentando reaproveitar conexao`);
-                prevConn.retryConnect();
+                toast.warning(`conexao para user ${opts.targetName} ja existe. iniciando conexão`);
+                await connect({conn: prevConn});
                 return;
             }
             
@@ -173,6 +196,7 @@ export const ConnectionProvider = ({ children }) => {
            
             setCurrConnection(conn);
             setConnections([...connections, conn]);
+            await connect({conn: conn});
         }
 
         function onConnect() { console.log('conectado ao servidor de sinalização'); }
@@ -222,19 +246,18 @@ export const ConnectionProvider = ({ children }) => {
         function onOffer(content) {
             const target = findConnection(content.name);
             if(!target || !target.peer) {
-                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+                console.log('recebeu uma oferta mas nao possui uma conexão rtc iniciada');
                 return;
             }
             console.log(`processando oferta de: ${content.name}`);
             const offer = content.data;
             target.peer.receiveOffer({ description:offer });
-            
         }
 
         function onAnswer(content) {
             const target = findConnection(content.name);
             if(!target || !target.peer) {
-                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+                console.log('recebeu uma resposta mas nao possui uma conexão rtc iniciada');
                 return;
             }
             console.log(`processando resposta de: ${content.name}`);
@@ -245,7 +268,7 @@ export const ConnectionProvider = ({ children }) => {
         function onPeerReady(content) {
             const target = findConnection(content.name);
             if(!target || !target.peer) {
-                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+                console.log('o par notificou q esta pronto mas nao possui uma conexão rtc iniciada');
                 return;
             }
             console.log(`peer: ${content.name}. Pronto`);
@@ -286,6 +309,39 @@ export const ConnectionProvider = ({ children }) => {
     function createConnection(opts) {
         socket.emit('polite', {name: user.name, target: opts.targetName});
     }
+    
+    function findConnection(name) {
+        const target = connections.find(target => target.name == name);
+        if(target) {
+            return target;
+        }
+        return null;
+    }
+
+    async function connect(opts) {
+        const { conn } = opts;
+        //se chama logo em seguida a primeira vez nunca funciona, fazendo com que se conecte geralmente na segunda vez
+        setTimeout(async () => await conn.tryConnect({userName:user.name}), 500);
+    }
+
+    function handleCurrentConnection(conn) {
+        setCurrConnection(conn);
+    }
+
+    function addContact(opts) {
+        const prevConn = findConnection(opts.targetName);
+        if(prevConn) {
+            toast.warning(`contato para user ${opts.targetName} ja existe.`);
+            return;
+        }
+        
+        const conn = new Connection(opts.targetName);
+        conn.polite = opts.polite;
+        conn.socket = socket;
+        
+        setConnections([...connections, conn]);
+    }
+
 
     const connectSocket = async () => {
         /**
@@ -384,7 +440,9 @@ export const ConnectionProvider = ({ children }) => {
             displayStream,
             connectSocket,
             createConnection,
+            handleCurrentConnection,
             removeConnection,
+            addContact,
             disconnectSocket,
             toogleAudio,
             toogleCamera,

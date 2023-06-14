@@ -7,10 +7,54 @@ import Call from "@/models/call";
 //TODO existe a possibilidade de uma chamada ser feita ao mesmo tempo e ficar preso de algum modo.
 //testar e corrigir isso
 
+const CallToast = ({ index, callerName, acceptCall, refuseCall, closeToast }) =>  {
+  
+    const handleAccept = () => {
+      acceptCall(index);
+      closeToast();
+    }
+    const handleRefuse = () => {
+      refuseCall(index);
+      closeToast();
+    }
+  
+    return <div className='flex flex-col items-center space-y-2'>
+      <span>recebendo chamada: {callerName}</span>
+      <div className='flex flex-row items-center space-x-2'>
+        <button
+          className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
+          onClick={handleAccept}
+        >
+          aceitar
+        </button>
+        <button
+          className="rounded-md py-2 px-4 bg-blue-500 text-white font-medium focus:outline-none hover:bg-blue-600"
+          onClick={handleRefuse}
+        >
+          recusar
+        </button>
+      </div>
+    </div>
+}
+
+const CallerToast = ({ index, callName, attempt, closeToast }) =>  {
+    return <div className='flex flex-col items-center space-y-2'>
+        <span>Chamando: {callName}</span>
+        <span>tentativa: {attempt}</span>
+    </div>
+}
+  
+
 function useCall({socket, connections, createConnection}) {
     const { user } = useAuth();
     
     const [calls, setCalls] = useState([]);
+
+    useEffect(() => {
+        calls.forEach((call, i) => {
+            toastCall(call, i);
+        });
+    }, [calls]);
 
     useEffect(() => {
         if(!socket) {
@@ -62,17 +106,20 @@ function useCall({socket, connections, createConnection}) {
         }
 
         function onCallAccepted(content) {
+            toast.dismiss(`${content.name}-toast`);
             toast.info('chamada aceita');
             const call = completeCall(false, content);
             createConnection({targetName: call.target});
         }
 
         function onCallRefused(content) {
+            toast.dismiss(`${content.name}-toast`);
             completeCall(false, content);
             toast.info('chamada recusada');
         }
 
         function onCallCanceled(content) {
+            toast.dismiss(`${content.name}-toast`);
             toast.info('recebendo cancelamento. user:'+content.name);
             cancelCall(content);
         }
@@ -80,6 +127,7 @@ function useCall({socket, connections, createConnection}) {
         function onCallError(content) {
             // ate o momento o erro so é disparado quando uma chamada nao é concluida
             // entao o content é o mesmo q foi enviado na chamada, entao o target é o q foi enviado,ou seja, é o "content.target"
+            toast.dismiss(`${content.target}-toast`);
             toast.info('recebendo erro. user:' + content.target);
             const call = calls.find(call => call.target === content.target);
             if(call) {
@@ -100,6 +148,59 @@ function useCall({socket, connections, createConnection}) {
             socket.off('callcanceled', onCallCanceled);
         };
     }, [socket, calls]);
+
+    function toastCall(call, index) {
+        const id = `${call.target}-toast`;
+        toast.dismiss(id);
+        if(!call.isIncoming) {
+            toast(
+                <CallerToast 
+                    index={index} 
+                    callName={call.target} 
+                    attempt={call.currentCallAttempt}
+                />,
+                {
+                    toastId: id,
+                    autoClose: false
+                }
+            )
+            call.detachObserver(id);
+            call.attachObserver({
+                id: id,
+                obs: async (event, ...args) => {
+                    const actions = {
+                        calling: (call) => {
+                            toast.update(
+                                id,
+                                {
+                                    render: <CallerToast 
+                                        index={index} 
+                                        callName={call.target} 
+                                        attempt={call.currentCallAttempt}
+                                    />,
+                                    autoClose: false
+                                }
+                            );
+                        },
+                    };
+                    call.executeActionStrategy(actions, event, ...args);
+                }
+            });
+            return;
+        }
+        toast(
+            <CallToast 
+                index={index} 
+                callerName={call.target} 
+                acceptCall={acceptCall} 
+                refuseCall={refuseCall} 
+            />,
+            {
+                toastId: id,
+                autoClose: false
+            }
+        );
+    }
    
     const call = async (opts) => {
         const { targetName } = opts;

@@ -3,7 +3,7 @@ import useConnection from "@/hook/useConnection";
 import { FiPhoneCall, FiPhoneOff } from "react-icons/fi";
 
 function Contact({connection}) {
-    const { callManager, connections, hangUp } = useConnection();
+    const { callManager, connections, hangUp, handleCurrentConnection } = useConnection();
 
     const [connectionState, setConnectionState] = useState('desconectado');
     
@@ -34,28 +34,36 @@ function Contact({connection}) {
         hangUp({target: connection.name})
     }
 
+    const handleCurrConn = () => {
+        handleCurrentConnection(connection);
+    }
+
     return (
-        <div className="flex items-start">
-            <div className="flex flex-col items-center">
-                <img className="w-10 h-10 rounded-full mr-4" src="https://via.placeholder.com/150" alt="Avatar"/>
-                <div className="text-gray-500 text-xs">status: {connectionState}</div>
-            </div>
-            <div className="flex-1">
-                <div className="font-bold">{connection.user.name}</div>
-            </div>
-            <div className="flex space-x-2 items-center justify-center">
-                <button 
-                    className="bg-green-500 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                    onClick={handleCall} 
-                >
-                    <FiPhoneCall/>
-                </button>
-                <button 
-                    className="bg-red-500 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                    onClick={handleHangUp} 
-                >
-                    <FiPhoneOff/>
-                </button>
+        <div className="" onClick={handleCurrConn}>
+            <div className="w-full overflow-hidden p-2">
+                <div className="flex items-start">
+                    <div className="flex flex-col items-center">
+                        <img className="w-10 h-10 rounded-full" src="https://via.placeholder.com/150" alt="Avatar"/>
+                        <div className="text-gray-500 text-xs">status: {connectionState}</div>
+                    </div>
+                    <div className="flex-1">
+                        <div className="font-bold">{connection.user.name}</div>
+                    </div>
+                    <div className="flex space-x-2 items-center justify-center">
+                        <button 
+                            className="bg-green-500 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            onClick={handleCall} 
+                        >
+                            <FiPhoneCall/>
+                        </button>
+                        <button 
+                            className="bg-red-500 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            onClick={handleHangUp} 
+                        >
+                            <FiPhoneOff/>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

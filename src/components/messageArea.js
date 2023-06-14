@@ -5,7 +5,9 @@ import useAuth from "@/hook/useAuth";
 import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { DISPLAY_TYPES } from "@/models/peer";
 
-function MessageArea({ connection: conn }) {
+function MessageArea() {
+
+    const { currConnection: conn } = useConnection();
 
     const textInput = useRef(null);
     const [messages, setMessages] = useState([]);
@@ -18,6 +20,10 @@ function MessageArea({ connection: conn }) {
     const displayRef = useRef(null);
     
     const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        setMessages([...conn.getMessages()]);
+    }, [conn]);
 
     useEffect(() => {
         async function onDataChannelMessage(conn, content) {

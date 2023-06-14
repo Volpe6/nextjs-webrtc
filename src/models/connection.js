@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import Notifier from './notifier';
 
 const MAX_RETRIES = 5;
-const TIMEOUT = 10000;
+const TIMEOUT = 5000;
 const PEER_ID = 'peer';
 
 class Connection extends Notifier {
