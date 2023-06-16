@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { CircularProgressbarWithChildren, buildStyles } from 'react-circular-progressbar';
-import { toast } from "react-toastify";
 import { AiOutlineCloseCircle, AiOutlineDownload } from "react-icons/ai";
 
 function Message({ props }) {
-    const { sender, message, fileUpload } = props;
+    const { sender, message, fileUpload, file } = props;
     const downloadRef = useRef(null);
-    const [isCanceled, setIsCanceled] = useState(false);
-    const [downloadProgress, setDownloadProgress] = useState(null);
+    const [downloadProgress, setDownloadProgress] = useState(file&&file.downloadFile?100:null);//se possui o arquivo e ele esta disponivel para download define o progresso para 100%
 
     useEffect(() => {
         if(!fileUpload) {
@@ -19,22 +17,6 @@ function Message({ props }) {
             obs: async (event, ...args) => {
                 const actions = {
                     progress: progress => setDownloadProgress(progress),
-                    error: _ => {
-                        toast('erro')
-                        toast('cancelado')
-                        setIsCanceled(true);
-                        // setDownloadProgress(0);
-                    },
-                    abort: _ => {
-                        toast('cancelado')
-                        // setDownloadProgress(0);
-                        setIsCanceled(true);
-                    },
-                    received: (id, metadata, file) => {
-                        const downloadAnchor = downloadRef.current;
-                        downloadAnchor.href = URL.createObjectURL(file);
-                        downloadAnchor.download = metadata.name;
-                    },
                 };
                 fileUpload.executeActionStrategy(actions, event, ...args);
             }
@@ -42,7 +24,7 @@ function Message({ props }) {
         return () => {
             fileUpload.detachObserver(id);
         };
-    }, [fileUpload, isCanceled, downloadProgress]);
+    }, [fileUpload, downloadProgress]);
 
     const handleCancel = () => {
         if(downloadProgress==100) return;
@@ -54,9 +36,14 @@ function Message({ props }) {
             <div className={`rounded-lg flex items-center space-x-2 p-2 ${sender?'bg-blue-500 text-white': 'bg-gray-100'}`}>
                 <p className="text-sm">{message}</p>
                 {
-                    fileUpload&&
+                    file&&
                     <div className="w-[50px]">
-                        <a ref={downloadRef} onClick={handleCancel} >
+                        <a 
+                            ref={downloadRef} 
+                            href={file.downloadFile}
+                            download={file.name}
+                            onClick={handleCancel} 
+                        >
                             {
                                 downloadProgress&&
                                 <CircularProgressbarWithChildren 
@@ -67,8 +54,8 @@ function Message({ props }) {
                                 >
                                     <div className="flex flex-col items-center">
                                         {
-                                            !isCanceled?
-                                                downloadProgress==100?
+                                            !file.canceled&&!file.error?
+                                                downloadProgress==100||file.downloadFile?
                                                 <AiOutlineDownload/>:
                                                 (
                                                     <>

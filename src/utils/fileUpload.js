@@ -12,7 +12,9 @@ class FileUpload extends Notifier {
         }
         this.connection = connection;
         this.isReceive = isReceive;
+        
         this.file = file;
+
         this.receivedSize = 0;
         this.receiveBuffer = [];
 

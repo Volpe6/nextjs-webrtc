@@ -4,13 +4,14 @@ import useConnection from "@/hook/useConnection";
 import useAuth from "@/hook/useAuth";
 import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { DISPLAY_TYPES } from "@/models/peer";
+import { toast } from "react-toastify";
 
 function MessageArea() {
 
     const { currConnection: conn } = useConnection();
 
     const textInput = useRef(null);
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState({});
 
     const { user } = useAuth();
     const { fileManager } = useConnection();
@@ -22,44 +23,13 @@ function MessageArea() {
     const [count, setCount] = useState(0);
 
     useEffect(() => {
-        setMessages([...conn.getMessages()]);
+        setMessages({...conn.getMessages()});
     }, [conn]);
 
     useEffect(() => {
         async function onDataChannelMessage(conn, content) {
-            const msgStrategy = {
-                [MESSAGE_TYPES.TEXT]: (msg) => {},
-                [MESSAGE_TYPES.FILE_ABORT]: (msg) => {
-                    const { message } = msg;
-                    toast(`${conn.name} cancelou transferencia do arquivo`);
-                    fileManager.cancel(message);
-                    fileManager.cancelFilesFromConnection(conn);
-                },
-                [MESSAGE_TYPES.FILE_ERROR]: (msg) => {
-                    const { message } = msg;
-                    fileManager.cancel(message);
-                },
-                [MESSAGE_TYPES.FILE_META]: (msg) => {
-                    const { message } = msg;
-                    fileManager.receiveFile(conn, message);
-                },
-                [MESSAGE_TYPES.CHUNK]: (msg) => {
-                    const { message } = msg;
-                    fileManager.receiveChunk(message);
-                },
-            }
-            try {
-                const message = JSON.parse(content.data);
-                console.log(message);
-                const chosenMessageStrategy = msgStrategy[message.type];
-                if(chosenMessageStrategy) {
-                    chosenMessageStrategy(message);
-                    conn.receive(message);
-                    setMessages([...conn.getMessages()]);
-                }
-            } catch (error) {
-                console.log('nao foi possivel dar parse na mensagem');
-            }
+            console.log({...conn.getMessages()});
+            setMessages({...conn.getMessages()});
         }
         
         function onClose(conn, _) {
@@ -85,19 +55,19 @@ function MessageArea() {
         return () => {
             conn.detachObserver(id);
         }
-    }, [fileManager]);
+    }, [conn]);
 
     const sendMessage = () => {
         conn.send({message: textInput.current.value});
         textInput.current.value = '';
-        setMessages([...conn.getMessages()]);
+        setMessages({...conn.getMessages()});
     }
 
     const handleFile = (event) => {
         const files = event.target.files;
         fileManager.sendFile(conn, files);
         event.target.value = '';
-        setMessages([...conn.getMessages()]);
+        setMessages({...conn.getMessages()});
     }
     
     return (<>
@@ -110,16 +80,17 @@ function MessageArea() {
                 <span>{conn.name}</span>
             </div>
             <div className="flex-1 overflow-y-scroll p-4 space-y-2">
-                {messages.map((chatMsg, i) => {
+                {Object.values(messages).map(chatMsg => {
                     let { id, message } = chatMsg;
                     let fileUpload;
+                    let file;
                     if(chatMsg.type === MESSAGE_TYPES.FILE_META) {
                         message = chatMsg.message.file.name;
+                        file = chatMsg.message.file;
                         fileUpload = fileManager.findFile(id);
                     }
-                    return <Message key={id} props={{fileUpload, message, sender:chatMsg.senderId===user.id}} />;
-                }
-                )}
+                    return <Message key={id} props={{file, fileUpload, message, sender:chatMsg.senderId===user.id}} />
+                })}
             </div>
             <div className="flex justify-center items-center p-4">
                 <input ref={textInput} type="text" placeholder="Digite sua mensagem" className="rounded-l-full border border-gray-400 py-2 px-4 w-full focus:outline-none focus:shadow-outline" />

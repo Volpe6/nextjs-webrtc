@@ -197,7 +197,8 @@ function useCall({socket, connections, createConnection}) {
             />,
             {
                 toastId: id,
-                autoClose: false
+                autoClose: false,
+                closeOnClick: false
             }
         );
     }

@@ -155,7 +155,7 @@ export const ConnectionProvider = ({ children }) => {
                         connectionfailed: onConnectionFailed,
                         retryconnection: onRetryConnection,
                         datachannelopen: onDataChannelOpen,
-                        // datachannelmessage: onDataChannelMessage,
+                        datachannelmessage: onDataChannelMessage,
                         connectionstatechange: onConnectionStateChange,
                         signalingstatechange: onSignalingStateChange,
                         negotiation: onNegotiation,

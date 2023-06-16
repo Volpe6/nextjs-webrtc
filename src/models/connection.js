@@ -15,7 +15,7 @@ class Connection extends Notifier {
         this.name = name;
         this.user = new User(name);
         this.peer = null;
-        this.messages = [];
+        this.messages = {};
         this.polite = null;
         this.retries = 0;
         this.tryingConnect = false;
@@ -28,7 +28,7 @@ class Connection extends Notifier {
     detachObserver(id) {
         super.detachObserver(id);
         if(this.peer) {
-            this.peer.detachObserver(PEER_ID);
+            this.peer.detachObserver(id);
         }
     }
 
@@ -328,6 +328,12 @@ class Connection extends Notifier {
         //caso seja um arquivo o id da mesagem passa a ser o id do arquivo
         switch(type) {
             case MESSAGE_TYPES.FILE_META:
+                msg.id = content.id;
+                msg.message.file.canceled = false;
+                msg.message.file.error = false;
+                msg.message.file.complete = false;
+                msg.message.file.downloadFile = null;//objeto blob a ser baixado quando a transferencia for concluida
+                break;
             case MESSAGE_TYPES.FILE_ABORT:
             case MESSAGE_TYPES.FILE_ERROR:
             case MESSAGE_TYPES.CHUNK:
@@ -336,7 +342,7 @@ class Connection extends Notifier {
         }
         //esses tipos de mensagens o usuario nao precisa ver
         if(![MESSAGE_TYPES.CHUNK, MESSAGE_TYPES.FILE_ABORT, MESSAGE_TYPES.FILE_ERROR].includes(type)) {
-            this.messages.push(msg); 
+            this.messages[`${msg.id}`] = msg; 
         }
         return msg;
     }

@@ -46,6 +46,9 @@ function useFile() {
                     end: id => removeFile(id),
                     error: id => {
                         toast('falha no recebimento do arquivo');
+                        const msg = connection.getMessages()[id];
+                        msg.message.file.error = true;
+
                         connection.send({
                             type: MESSAGE_TYPES.FILE_ERROR,
                             message: {id}
@@ -53,10 +56,18 @@ function useFile() {
                     },
                     abort: id => {
                         toast('recebimento do arquivo foi cancelado');
+                        const msg = connection.getMessages()[id];
+                        msg.message.file.canceled = true;
+
                         connection.send({
                             type: MESSAGE_TYPES.FILE_ABORT,
                             message: {id}
                         });
+                    },
+                    received: (id, metadata, file) => {
+                        const msg = connection.getMessages()[id];
+                        msg.message.file.complete = true;
+                        msg.message.file.downloadFile = URL.createObjectURL(file);
                     },
                 };
                 receiveFile.executeActionStrategy(actions, event, ...args);
@@ -82,8 +93,16 @@ function useFile() {
                         toast.warn('finalizou');
                         removeFile(id);
                     },
+                    received: (id, metadata, file) => {
+                        const msg = connection.getMessages()[id];
+                        msg.message.file.complete = true;
+                        msg.message.file.downloadFile = URL.createObjectURL(file);
+                    },
                     error: id => {
                         toast('falha no envio do arquivo');
+                        const msg = connection.getMessages()[id];
+                        msg.message.file.error = true;
+
                         connection.send({
                             type: MESSAGE_TYPES.FILE_ERROR,
                             message: {id}
@@ -91,6 +110,9 @@ function useFile() {
                     },
                     abort: id => {
                         toast('Envio do arquivo foi cancelado');
+                        const msg = connection.getMessages()[id];
+                        msg.message.file.canceled = true;
+
                         connection.send({
                             type: MESSAGE_TYPES.FILE_ABORT,
                             message: {id}
