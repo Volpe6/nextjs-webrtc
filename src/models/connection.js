@@ -23,6 +23,29 @@ class Connection extends Notifier {
 
         this.displayStream = null;//do local
         this.userStream = null;//do local
+
+        const id = `${this.user.name}-media`;
+
+        this.remoteStreams = {
+            [DISPLAY_TYPES.USER_AUDIO]: {
+                id: id,
+                type: DISPLAY_TYPES.USER_AUDIO,
+                isFullScreen: false,
+                stream: null
+            },
+            [DISPLAY_TYPES.USER_CAM]: {
+                id: id,
+                type: DISPLAY_TYPES.USER_CAM,
+                isFullScreen: false,
+                stream: null
+            },
+            [DISPLAY_TYPES.DISPLAY]: {
+                id: id,
+                type: DISPLAY_TYPES.DISPLAY,
+                isFullScreen: false,
+                stream: null
+            },
+        }
     }
 
     detachObserver(id) {

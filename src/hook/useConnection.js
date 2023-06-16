@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import useCall from "./useCall";
 import useFile from "./useFile";
 import { TYPES as MESSAGE_TYPES } from "@/models/message";
+import { DISPLAY_TYPES } from "../models/peer";
 import { getDisplayMedia } from "@/utils/mediaStream";
 
 const ConnectionContext = createContext();
@@ -143,6 +144,47 @@ export const ConnectionProvider = ({ children }) => {
                 console.log('nao foi possivel dar parse na mensagem');
             }
         }
+        function onTrack(conn, event) {
+            console.log('lidando com track')
+            console.log(`track`, event);
+            let displayType;
+            
+            const { transceiver, track, streams } = event;
+    
+            const trv = conn.peer.retriveTransceiver({displayType: DISPLAY_TYPES.DISPLAY});
+            
+            const isDisplayStream = transceiver.mid == trv.mid;
+    
+            if(track.kind === 'audio') {
+                displayType = DISPLAY_TYPES.USER_AUDIO;
+            } else if(isDisplayStream) {
+                displayType = DISPLAY_TYPES.DISPLAY;
+            } else {
+                displayType = DISPLAY_TYPES.USER_CAM;
+            }
+    
+            let finalStream = null;
+
+            if(streams[0]) {
+                switch(displayType) {
+                    case DISPLAY_TYPES.USER_AUDIO:
+                        finalStream = new MediaStream([streams[0].getAudioTracks()[0]]);
+                        break;
+                    case DISPLAY_TYPES.USER_CAM:
+                    case DISPLAY_TYPES.DISPLAY:
+                        finalStream = new MediaStream([streams[0].getVideoTracks()[0]]);
+                        break;
+                }
+            }
+    
+            track.onmute = () => {
+                conn.remoteStreams[displayType].stream = null;
+                conn.emit('changetrack');
+            };
+
+            conn.remoteStreams[displayType].stream = finalStream;
+            conn.emit('changetrack');
+        }
         connections.forEach(async conn => {
             conn.attachObserver({
                 id: `connection-${conn.name}`,
@@ -156,6 +198,7 @@ export const ConnectionProvider = ({ children }) => {
                         retryconnection: onRetryConnection,
                         datachannelopen: onDataChannelOpen,
                         datachannelmessage: onDataChannelMessage,
+                        track: onTrack,
                         connectionstatechange: onConnectionStateChange,
                         signalingstatechange: onSignalingStateChange,
                         negotiation: onNegotiation,

@@ -35,49 +35,40 @@ function Chat() {
     const { currConnection: conn, connections, fileManager, toogleDisplay, toogleCamera, toogleAudio } = useConnection();
 
     useEffect(() => {
-        function onTrack(conn, event) {
-            console.log('lidando com track')
-            console.log(`track`, event);
-            let displayType;
-            
-            const { transceiver, track, streams } = event;
-    
-            const trv = conn.peer.retriveTransceiver({displayType: DISPLAY_TYPES.DISPLAY});
-            
-            const isDisplayStream = transceiver.mid == trv.mid;
-    
-            if(track.kind === 'audio') {
-                displayType = DISPLAY_TYPES.USER_AUDIO;
-            } else if(isDisplayStream) {
-                displayType = DISPLAY_TYPES.DISPLAY;
-            } else {
-                displayType = DISPLAY_TYPES.USER_CAM;
-            }
-    
-            const id = `${conn.user.name}-media`;
-            let finalStream = null;
-
-            if(streams[0]) {
-                switch(displayType) {
-                    case DISPLAY_TYPES.USER_AUDIO:
-                        finalStream = new MediaStream([streams[0].getAudioTracks()[0]]);
-                        break;
-                    case DISPLAY_TYPES.USER_CAM:
-                    case DISPLAY_TYPES.DISPLAY:
-                        finalStream = new MediaStream([streams[0].getVideoTracks()[0]]);
-                        break;
-                }
-            }
-
-    
-            track.onmute = () => {
-                update(id, displayType, null);
-            };
-    
-            update(id, displayType, {
-                type: displayType,
+        Object.values(conn.remoteStreams).forEach(media => {
+            //nessa parte eu limpo todas as midias locais
+            update(`${user.name}-media`, media.type, {
+                type: media.type,
                 isFullScreen: false,
-                stream: finalStream
+                stream: null
+            });
+            //aqui atuliza as midias do remoto caso tenha alguma
+            update(media.id, media.type, {
+                type: media.type,
+                isFullScreen: false,
+                stream: media.stream
+            });
+        });
+        //nessa parte atualiza as midias locais
+        if(conn.userStream && conn.userStream.getAudioTracks().length > 0) {
+            handleAudio(null, conn.userStream);
+        }
+        if(conn.userStream && conn.userStream.getVideoTracks().length > 0) {
+            handleCam(null, conn.userStream);
+        }
+        if(conn.displayStream) {
+            handleDisplay(null, conn.displayStream);
+        }
+    }, [conn]);
+
+    useEffect(() => {
+        function onChangeTrack(conn, event) {
+            Object.values(conn.remoteStreams).forEach(media => {
+                update(media.id, media.type, {
+                    type: media.type,
+                    isFullScreen: false,
+                    stream: media.stream
+                });
             });
         }
         
@@ -86,7 +77,7 @@ function Chat() {
             id: id,
             obs: async (event, ...args) => {
                 const actions = {
-                    track: onTrack,
+                    changetrack: onChangeTrack,
                 };
                 conn.executeActionStrategy(actions, event, ...args);
             }
@@ -179,8 +170,11 @@ function Chat() {
         setShowChatArea(prev => !prev);
     }
 
-    const handleAudio = async () => {
-        const stream = await toogleAudio();
+    const handleAudio = async (event, streams=null) => {
+        let stream = streams;
+        if(!stream) {
+            stream = await toogleAudio();
+        }
         update(`${user.name}-media`, DISPLAY_TYPES.USER_AUDIO, {
             type: DISPLAY_TYPES.USER_AUDIO,
             isFullScreen: false,
@@ -189,8 +183,11 @@ function Chat() {
         setAudioStream(stream);
     }
 
-    const handleCam = async () => {
-        const stream = await toogleCamera();
+    const handleCam = async (event, streams=null) => {
+        let stream = streams;
+        if(!stream) {
+            stream = await toogleCamera();
+        }
         update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
             type: DISPLAY_TYPES.USER_CAM,
             isFullScreen: false,
@@ -199,8 +196,11 @@ function Chat() {
         setCamStream(stream);
     }
 
-    const handleDisplay = async () => {
-        const stream = await toogleDisplay();
+    const handleDisplay = async (event, streams=null) => {
+        let stream = streams;
+        if(!stream) {
+            stream = await toogleDisplay();
+        }
         update(`${user.name}-media`, DISPLAY_TYPES.DISPLAY, {
             type: DISPLAY_TYPES.DISPLAY,
             isFullScreen: false,
