@@ -186,6 +186,7 @@ export const ConnectionProvider = ({ children }) => {
             const prevConn = findConnection(opts.targetName);
             if(prevConn) {
                 toast.warning(`conexao para user ${opts.targetName} ja existe. iniciando conexão`);
+                prevConn.polite = opts.polite;
                 await connect({conn: prevConn});
                 return;
             }
