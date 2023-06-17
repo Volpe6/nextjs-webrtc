@@ -3,7 +3,7 @@ export const DEVINCE_TYPES = {
     OUTHER: 'outher',
 };
 
-export async function getDevice() {
+export function getDevice() {
     if (screen.width < 640 || screen.height < 480) {
         // sirva a versão pra celular
         return DEVINCE_TYPES.MOBILE;

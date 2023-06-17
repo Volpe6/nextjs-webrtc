@@ -37,7 +37,7 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                             <MdOutlineScreenShare onClick={handleDisplay}/>
                             <BsChatLeftDots onClick={handleChat}/>
                             {
-                                getDevice()===DEVINCE_TYPES.MOBILE&&<MdOutlineCameraswitch onClick={handleCamMode}/>
+                                getDevice()===DEVINCE_TYPES.MOBILE?<MdOutlineCameraswitch onClick={handleCamMode}/>:null
                             }
                         </div>
                     </div>
