@@ -23,7 +23,7 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex flex-row h-screen overflow-hidden">
+      <main className="flex flex-row h-[100svh] overflow-hidden">
         <div className={`${conn?'hidden':'flex'} md:flex flex-col justify-start w-full md:w-[500px] min-w-[300px] border-r border-gray-500`}>
           <ContactList />
         </div>

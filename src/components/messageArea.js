@@ -66,7 +66,7 @@ function MessageArea() {
     }
 
     return (<>
-     <div className="flex flex-col h-screen bg-purple-700 drag-area">
+     <div className="flex flex-col h-[100svh] bg-purple-700 drag-area">
             <div className="flex w-full justify-start items-center bg-purple-600 text-white p-4 space-x-2">
                 <div className='flex md:hidden items-center' onClick={() => handleCurrentConnection(null)}>
                     <span>

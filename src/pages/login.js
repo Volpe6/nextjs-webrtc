@@ -15,7 +15,7 @@ function Login() {
   }
 
   return (
-    <div className="relative flex h-screen w-screen flex-col bg-slate-50 md:items-center md:justify-center md:bg-transparent">
+    <div className="relative flex h-[100svh] w-screen flex-col bg-slate-50 md:items-center md:justify-center md:bg-transparent">
       <Head>
         <title>colocar titulo</title>
       </Head>
