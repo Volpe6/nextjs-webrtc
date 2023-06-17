@@ -60,13 +60,13 @@ class Peer extends Notifier {
         }
         if(event==='negotiation') {
             this.negotiationAttempts++;
-            this.notify('info', `Peer ${this.name} >> negotiation so pode ser emitido com um objeto`);
             if(this.negotiationAttempts> MAX_NEGOTIATION_ATTEMPTS) {
                 this.notify('info', `Peer ${this.name} >> tentativas de negociaçoes maximas atingidas fechando peer atual e iniciando tentativa de reconexão`);
                 this.close();
                 this.notify('retryconnection');
                 return;
             }
+            this.notify('info', `Peer ${this.name} >> emitindo negotiation`);
         }
         this.notify(event, ...args);
     }
