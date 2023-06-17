@@ -139,6 +139,7 @@ export const ConnectionProvider = ({ children }) => {
                 if(chosenMessageStrategy) {
                     chosenMessageStrategy(message);
                     conn.receive(message);
+                    conn.emit('message');
                 }
             } catch (error) {
                 console.log('nao foi possivel dar parse na mensagem');

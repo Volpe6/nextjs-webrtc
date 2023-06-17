@@ -22,15 +22,10 @@ function MessageArea() {
     }, [conn]);
 
     useEffect(() => {
-        async function onDataChannelMessage(conn, content) {
+        async function onMessage(conn, content) {
             setMessages({...conn.getMessages()});
         }
         
-        function onClose(conn, _) {
-            audioRef.current.srcObject = null;
-            videoRef.current.srcObject = null;
-            displayRef.current.srcObject = null;
-        }
         function onDataChannelError(conn, _) {
             fileManager.cancelFilesFromConnection(conn);
         }
@@ -41,7 +36,7 @@ function MessageArea() {
             obs: async (event, ...args) => {
                 const actions = {
                     datachannelerror: onDataChannelError,
-                    datachannelmessage: onDataChannelMessage,
+                    message: onMessage,
                 };
                 conn.executeActionStrategy(actions, event, ...args);
             }
