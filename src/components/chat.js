@@ -252,7 +252,7 @@ function Chat() {
                                         userCamMedia&&
                                         !userCamMedia.isFullScreen&&
                                         userCamMedia.stream&&
-                                        <div className={`${(!isRoot||!hasDisplay)&&'min-w-[190px] max-h-[110px]'}`}>
+                                        <div className={`${(!isRoot||!hasDisplay)&&'min-w-[190px]'}`}>
                                             <Video 
                                                 stream={userCamMedia.stream} 
                                                 width={hasDisplay?75:200} 
