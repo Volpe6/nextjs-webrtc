@@ -9,7 +9,7 @@ import AudioSpectrum from "./audioSpectrum";
 
 function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, handleChat, children}) {
     return (
-        <Drag render={props=>(
+        <Drag initialPosition={{x:0, y:'70%'}} render={props=>(
             <div 
                 className="absolute flex flex-col space-y-1"
                 style={{

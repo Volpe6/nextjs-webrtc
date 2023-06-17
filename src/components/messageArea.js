@@ -3,24 +3,19 @@ import Message from "./message";
 import useConnection from "@/hook/useConnection";
 import useAuth from "@/hook/useAuth";
 import { TYPES as MESSAGE_TYPES } from "@/models/message";
-import { DISPLAY_TYPES } from "@/models/peer";
-import { toast } from "react-toastify";
+import { BsPaperclip } from "react-icons/bs";
+import { FiSend } from "react-icons/fi";
+import { AiOutlineArrowLeft } from "react-icons/ai";
 
 function MessageArea() {
 
-    const { currConnection: conn } = useConnection();
+    const { currConnection: conn, handleCurrentConnection } = useConnection();
 
     const textInput = useRef(null);
     const [messages, setMessages] = useState({});
 
     const { user } = useAuth();
     const { fileManager } = useConnection();
-
-    const audioRef = useRef(null);
-    const videoRef = useRef(null);
-    const displayRef = useRef(null);
-    
-    const [count, setCount] = useState(0);
 
     useEffect(() => {
         setMessages({...conn.getMessages()});
@@ -69,15 +64,28 @@ function MessageArea() {
         event.target.value = '';
         setMessages({...conn.getMessages()});
     }
-    
+
+    const handleKeyPress = (event) => {
+        if (event.keyCode === 13) {
+            sendMessage();
+        }
+    }
+
     return (<>
      <div className="flex flex-col h-screen bg-purple-700 drag-area">
-            <div className="flex justify-start items-center bg-purple-600 p-4 space-x-2">
-                {/* <img src="https://i.pravatar.cc/50?img=2" alt="Avatar" class="rounded-full ml-2"/> */}
-                <audio ref={audioRef} autoPlay></audio>
-                <video ref={videoRef} width={100} playsInline autoPlay></video>
-                <video ref={displayRef} width={100} playsInline autoPlay></video>
-                <span>{conn.name}</span>
+            <div className="flex w-full justify-start items-center bg-purple-600 text-white p-4 space-x-2">
+                <div className='flex md:hidden items-center' onClick={() => handleCurrentConnection(null)}>
+                    <span>
+                        <AiOutlineArrowLeft/>
+                    </span>
+                    <span>
+                        Voltar
+                    </span>
+                </div>
+                <div className="flex items-center">
+                    {/* <img src="https://i.pravatar.cc/50?img=2" alt="Avatar" class="rounded-full ml-2"/> */}
+                    <span>{conn.name}</span>
+                </div>
             </div>
             <div className="flex-1 overflow-y-scroll p-4 space-y-2">
                 {Object.values(messages).map(chatMsg => {
@@ -92,16 +100,16 @@ function MessageArea() {
                     return <Message key={id} props={{file, fileUpload, message, sender:chatMsg.senderId===user.id}} />
                 })}
             </div>
-            <div className="flex justify-center items-center p-4">
-                <input ref={textInput} type="text" placeholder="Digite sua mensagem" className="rounded-l-full border border-gray-400 py-2 px-4 w-full focus:outline-none focus:shadow-outline" />
+            <div className="flex justify-center items-center p-4 bg-gradient-to-r from-pink-400 to-purple-500">
+                <div>
+                    <label for="file-input" className="text-2xl"><BsPaperclip/></label>
+                    <input id="file-input" className="hidden" type="file" onChange={handleFile}/>
+                </div>
+                <input ref={textInput} onKeyDown={handleKeyPress} type="text" placeholder="Digite sua mensagem" className="rounded-l-full border border-gray-400 py-2 px-4 w-full focus:outline-none focus:shadow-outline" />
                 <button onClick={sendMessage}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r-full">
-                Enviar
+                className="bg-blue-500 hover:bg-blue-700 text-white p-2 pr-4 rounded-r-full text-2xl">
+                    <FiSend/>
                 </button>
-                <input type="file" onChange={handleFile}/>
-                {/* <audio ref={localAudioRef} autoPlay muted></audio>
-                <video ref={localVideoRef} width={100} playsInline autoPlay muted></video>
-                <video ref={localDisplayRef} width={100} playsInline autoPlay muted></video> */}
             </div>
         </div>
     </>);

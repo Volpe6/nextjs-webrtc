@@ -37,7 +37,6 @@ function ContactList() {
 
     return (
         <>
-            <div className="flex flex-col justify-start w-1/4 md:w-[500px] min-w-[300px] border-r border-gray-500">
             {
                 showNewContact?
                 (
@@ -116,7 +115,6 @@ function ContactList() {
                 </>
                 )
             }
-            </div>
         </>
     );
 }

@@ -24,11 +24,17 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex flex-row h-screen overflow-hidden">
-        <ContactList />
+        <div className={`${conn?'hidden':'flex'} md:flex flex-col justify-start w-full md:w-[500px] min-w-[300px] border-r border-gray-500`}>
+          <ContactList />
+        </div>
+        
         {/* <div className='relative drag-area'>
           <MediaControls userAudioStream={audioStream} />
         </div> */}
-        {conn && <Chat />}
+        <div className={`w-full ${conn?'block':'hidden'} md:flex items-center justify-center bg-gradient-to-r from-green-400 to-purple-500`}>
+          {!conn&&<h1>Sem conversa selecionada</h1>}
+          {conn && <Chat />}
+        </div>
       </main>
     </>
   )

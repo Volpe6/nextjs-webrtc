@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-export default function Drag({render}) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+export default function Drag({render, initialPosition={x: 0, y: 0}}) {
+  const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [cursorOffset, setCursorOffset] = useState({ x: 0, y: 0 });
 
