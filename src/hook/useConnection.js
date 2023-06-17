@@ -435,12 +435,15 @@ export const ConnectionProvider = ({ children }) => {
             console.log('atuamente sem conexao');
             return;
         }
-        if(userCamMode==='user') {
+        let mode = userCamMode;
+        if(mode==='user') {
             setUserCamMode('environment');
+            mode = 'environment';
         } else {
             setUserCamMode('user');
+            mode = 'user';
         }
-        return await currConnection.toogleCamera({enabled:null, video: {facingMode: userCamMode}, requestNewTrack: true});
+        return await currConnection.toogleCamera({enabled:null, video: {facingMode: mode}, requestNewTrack: true});
     }
 
     const toogleDisplay = async (opts) => {
