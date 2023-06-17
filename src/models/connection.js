@@ -196,12 +196,12 @@ class Connection extends Notifier {
      * Ao contrario do codigo do compartilhamento da tela, nesse caso tenta utilizar a stream ja existente 
      * so adicionando os track ausentes 
      */
-    async toogleCamera(opts={enabled:null, facingMode: 'user', requestNewTrack: false}) {
-        const { enabled, requestNewTrack, facingMode } = opts;
+    async toogleCamera(opts={enabled:null, video: true, requestNewTrack: false}) {
+        const { enabled, requestNewTrack, video } = opts;
         return await this.toogleUserTrack({
             mediaType: 'video',
             displayType: DISPLAY_TYPES.USER_CAM,
-            mediaConfig: {video: true, facingMode: facingMode},
+            mediaConfig: {video: video},
             requestNewTrack: requestNewTrack,
             enabled
         });

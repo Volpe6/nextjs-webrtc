@@ -440,7 +440,7 @@ export const ConnectionProvider = ({ children }) => {
         } else {
             setUserCamMode('user');
         }
-        return await currConnection.toogleCamera({enabled:null, facingMode: userCamMode, requestNewTrack: true});
+        return await currConnection.toogleCamera({enabled:null, video: {facingMode: userCamMode}, requestNewTrack: true});
     }
 
     const toogleDisplay = async (opts) => {
