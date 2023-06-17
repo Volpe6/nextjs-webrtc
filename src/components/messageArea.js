@@ -23,7 +23,6 @@ function MessageArea() {
 
     useEffect(() => {
         async function onDataChannelMessage(conn, content) {
-            console.log({...conn.getMessages()});
             setMessages({...conn.getMessages()});
         }
         
