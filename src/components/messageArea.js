@@ -9,9 +9,10 @@ import { AiOutlineArrowLeft } from "react-icons/ai";
 
 function MessageArea() {
 
-    const { currConnection: conn, handleCurrentConnection } = useConnection();
+    const { currConnection: conn, handleCurrentConnection, mediaManager } = useConnection();
 
     const textInput = useRef(null);
+    const messagesRef = useRef(null);
     const [messages, setMessages] = useState({});
 
     const { user } = useAuth();
@@ -20,6 +21,10 @@ function MessageArea() {
     useEffect(() => {
         setMessages({...conn.getMessages()});
     }, [conn]);
+
+    useEffect(() => {
+        messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }, [messages]);
 
     useEffect(() => {
         async function onMessage(conn, content) {
@@ -47,6 +52,9 @@ function MessageArea() {
     }, [conn]);
 
     const sendMessage = () => {
+        if(textInput.current.value === "") {
+            return;
+        }
         conn.send({message: textInput.current.value});
         textInput.current.value = '';
         setMessages({...conn.getMessages()});
@@ -66,7 +74,7 @@ function MessageArea() {
     }
 
     return (<>
-     <div className="flex flex-col h-[100svh] bg-purple-700 drag-area">
+     <div className={`flex flex-col ${mediaManager.hasFullScreen()!=null?'h-[50svh] md:h-[100svh]':'h-[100svh]'} bg-purple-700 drag-area`}>
             <div className="flex w-full justify-start items-center bg-purple-600 text-white p-4 space-x-2">
                 <div className='flex md:hidden items-center' onClick={() => handleCurrentConnection(null)}>
                     <span>
@@ -81,7 +89,7 @@ function MessageArea() {
                     <span>{conn.name}</span>
                 </div>
             </div>
-            <div className="flex-1 overflow-y-scroll p-4 space-y-2">
+            <div ref={messagesRef} className="flex-1 overflow-y-scroll p-4 space-y-2">
                 {Object.values(messages).map(chatMsg => {
                     let { id, message } = chatMsg;
                     let fileUpload;

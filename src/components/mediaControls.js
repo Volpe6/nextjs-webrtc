@@ -8,7 +8,7 @@ import { MdOutlineCameraswitch } from "react-icons/md";
 
 function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, handleChat, handleCamMode, children}) {
     return (
-        <Drag initialPosition={{x:0, y:'50%'}} render={props=>(
+        <Drag initialPosition={{x:0, y:'30%'}} render={props=>(
             <div 
                 className="absolute flex flex-col space-y-1"
                 style={{
@@ -32,9 +32,21 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                             <div className="absolute pointer-events-none bottom-0"><AudioSpectrum audioStream={audioStream} /></div>
                         </div>
                         <div className="relative text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
-                            <BiMicrophone onClick={handleAudio}/>
-                            <BsCameraVideo onClick={handleCam}/>
-                            <MdOutlineScreenShare onClick={handleDisplay}/>
+                            {
+                                connection.userStream&&connection.userStream.getAudioTracks().length>0?
+                                <BiMicrophoneOff onClick={handleAudio}/>:
+                                <BiMicrophone onClick={handleAudio}/>
+                            }
+                            {
+                                connection.userStream&&connection.userStream.getVideoTracks().length>0?
+                                <BsCameraVideoOff onClick={handleCam}/>:
+                                <BsCameraVideo onClick={handleCam}/>
+                            }
+                            {
+                                connection.displayStream&&connection.displayStream.getTracks().length>0?
+                                <MdOutlineStopScreenShare onClick={handleDisplay}/>:
+                                <MdOutlineScreenShare onClick={handleDisplay}/>
+                            }
                             <BsChatLeftDots onClick={handleChat}/>
                             {
                                 getDevice()===DEVINCE_TYPES.MOBILE?<MdOutlineCameraswitch onClick={handleCamMode}/>:null

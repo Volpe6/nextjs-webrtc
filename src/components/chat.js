@@ -184,10 +184,10 @@ function Chat() {
     }
 
     return (<>
-        <div className="relative flex items-center justify-center w-full drag-area">
+        <div className="relative flex flex-col md:flex-row items-center justify-center w-full drag-area">
             {
                 mediaManager.hasFullScreen()&&
-                <div className="flex flex-row items-center justify-center">
+                <div className="flex flex-row h-[50svh] md:h-[100svh] items-center justify-center">
                     {
                         mediaManager.getMedias().map((userMedia) => {
                             const medias = Object.values(userMedia.medias);
@@ -209,6 +209,7 @@ function Chat() {
             </div>
 
             <MediaControls
+                connection={conn}
                 audioStream={audioStream}
                 handleAudio={handleAudio}
                 handleCam={handleCam}
