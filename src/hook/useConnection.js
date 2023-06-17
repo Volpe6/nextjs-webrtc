@@ -7,7 +7,7 @@ import useCall from "./useCall";
 import useFile from "./useFile";
 import { TYPES as MESSAGE_TYPES } from "@/models/message";
 import { DISPLAY_TYPES } from "../models/peer";
-import { getDisplayMedia } from "@/utils/mediaStream";
+import useMedia from "./useMedia";
 
 const ConnectionContext = createContext();
 
@@ -30,6 +30,7 @@ export const ConnectionProvider = ({ children }) => {
     const { user } = useAuth();
     const callManager = useCall({ socket, connections, createConnection });
     const fileManager = useFile();
+    const mediaManager = useMedia();
 
     useEffect(() => {
         
@@ -482,6 +483,7 @@ export const ConnectionProvider = ({ children }) => {
             connections,
             callManager,
             fileManager,
+            mediaManager,
             displayStream,
             connectSocket,
             createConnection,

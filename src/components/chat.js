@@ -1,49 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useAuth from '../hook/useAuth';
 import useConnection from '../hook/useConnection';
-import Message from "./message";
 import { DISPLAY_TYPES } from "@/models/peer";
-import { TYPES as MESSAGE_TYPES } from "@/models/message";
-import { toast } from "react-toastify";
-import useMedia from "@/hook/useMedia";
 import MediaControls from "./mediaControls";
 import Video from "./video";
-import Drag from "./drag";
 import MessageArea from "./messageArea";
 import Row from "./row";
 import AudioSpectrum from "./audioSpectrum";
 
 function Chat() {
-    const textInput = useRef(null);
-    const [messages, setMessages] = useState([]);
-    
-    /**
-     * Uma gambiarra pra ter acesso aos streams anteriores. Fiz desse modo quando o evento de track era disparado e o setUserMedias chamado, 
-     * o codigo parava de ouvir eventos de track, nao entendi muito bem o pq(tinha tentado por o userMedias no array de dependencias do useEffec, 
-     * mas isso q fazia esse comportamento acontecer). Acho q por disparar o setUserMedias o listener atual era perdido e um novo criado logo em seguida,
-     * mas isso fazia com q o evento de track nao finalizasse corretamnte. Ainda disparo setUserMedias pq quero q o componente seja remontado
-     */
-    const prevUserMedias = useRef({});
-    const [userMedias, setUserMedias] = useState({});
     const [showChatArea, setShowChatArea] = useState(true);
-    
     const [audioStream, setAudioStream] = useState(null);
-    const [camStream, setCamStream] = useState(null);
-    const [displayStream, setDisplayStream] = useState(null);
 
     const { user } = useAuth();
-    const { currConnection: conn, connections, fileManager, toogleDisplay, toogleCamera, toogleAudio } = useConnection();
+    const { currConnection: conn, mediaManager, fileManager, toogleDisplay, toogleCamera, toogleAudio } = useConnection();
 
     useEffect(() => {
+        mediaManager.resetMedias();
         Object.values(conn.remoteStreams).forEach(media => {
             //nessa parte eu limpo todas as midias locais
-            update(`${user.name}-media`, media.type, {
+            mediaManager.update(`${user.name}-media`, media.type, {
                 type: media.type,
                 isFullScreen: false,
                 stream: null
             });
             //aqui atuliza as midias do remoto caso tenha alguma
-            update(media.id, media.type, {
+            mediaManager.update(media.id, media.type, {
                 type: media.type,
                 isFullScreen: false,
                 stream: media.stream
@@ -64,7 +46,7 @@ function Chat() {
     useEffect(() => {
         function onChangeTrack(conn, event) {
             Object.values(conn.remoteStreams).forEach(media => {
-                update(media.id, media.type, {
+                mediaManager.update(media.id, media.type, {
                     type: media.type,
                     isFullScreen: false,
                     stream: media.stream
@@ -115,55 +97,8 @@ function Chat() {
         }
     }, []);
 
-    const update = (id, type, media) => {
-        let crrUserMedia = prevUserMedias.current[id];
-        if(!crrUserMedia) {
-            crrUserMedia = {
-                id: id,
-                isRoot: false,
-                medias: {}
-            };
-        }
-        crrUserMedia.medias[type] = media;
-        const newMedias = {
-            ...prevUserMedias.current,
-            [id]: crrUserMedia
-        }
-        prevUserMedias.current = newMedias;
-        console.log('new Medias', newMedias)
-        setUserMedias(prevUserMedias.current);
-    }
-
-    const getMedias = () => {
-        let medias = Object.values(userMedias).filter(userMedia=>userMedia.id!==`${user.name}-media`);
-        let root = userMedias[`${user.name}-media`];
-        if(root) {
-            root.isRoot = true;
-            medias.unshift(root);
-        }
-        return medias;
-    };
-
-    const toogleFullScreen = (id, type) => {
-        const newUserMedias = {...prevUserMedias.current};
-        const crrUserMedia = newUserMedias[id];
-        if(crrUserMedia&&crrUserMedia.medias[type]) {
-            const media = crrUserMedia.medias[type];
-            media.isFullScreen = !media.isFullScreen;
-            newUserMedias[id] = crrUserMedia;
-        }
-        if(!hasFullScreen()) {
-            setShowChatArea(true);
-        } else {
-            setShowChatArea(false);
-        }
-        setUserMedias(newUserMedias);
-    }
-
-    const hasFullScreen = () => getMedias().find(userMedia=> Object.values(userMedia.medias).find(media=>media&&media.isFullScreen));
-
     const handleChat = () => {
-        if(!hasFullScreen()) {
+        if(!mediaManager.hasFullScreen()) {
             setShowChatArea(true);
             return;
         }
@@ -175,7 +110,7 @@ function Chat() {
         if(!stream) {
             stream = await toogleAudio();
         }
-        update(`${user.name}-media`, DISPLAY_TYPES.USER_AUDIO, {
+        mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_AUDIO, {
             type: DISPLAY_TYPES.USER_AUDIO,
             isFullScreen: false,
             stream: stream?new MediaStream([stream.getAudioTracks()[0]]):null
@@ -188,12 +123,11 @@ function Chat() {
         if(!stream) {
             stream = await toogleCamera();
         }
-        update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
+        mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
             type: DISPLAY_TYPES.USER_CAM,
             isFullScreen: false,
             stream: stream?new MediaStream([stream.getVideoTracks()[0]]):null
         });
-        setCamStream(stream);
     }
 
     const handleDisplay = async (event, streams=null) => {
@@ -201,28 +135,36 @@ function Chat() {
         if(!stream) {
             stream = await toogleDisplay();
         }
-        update(`${user.name}-media`, DISPLAY_TYPES.DISPLAY, {
+        mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.DISPLAY, {
             type: DISPLAY_TYPES.DISPLAY,
             isFullScreen: false,
             stream: stream?new MediaStream(stream.getTracks()):null
         });
-        setDisplayStream(stream);
+    }
+
+    function handleFullScreen(id, type) {
+        mediaManager.toogleFullScreen(id, type);
+        if(!mediaManager.hasFullScreen()) {
+            setShowChatArea(true);
+        } else {
+            setShowChatArea(false);
+        }
     }
 
     return (<>
         <div className="relative flex items-center justify-center w-full drag-area">
             {
-                hasFullScreen()&&
+                mediaManager.hasFullScreen()&&
                 <div className="flex flex-row items-center justify-center">
                     {
-                        getMedias().map((userMedia) => {
+                        mediaManager.getMedias().map((userMedia) => {
                             const medias = Object.values(userMedia.medias);
                             return medias.map(media => {
                                 if(!media) return;
                                 if(!media.isFullScreen) return;
                                 return <Video 
                                     stream={media.stream} 
-                                    fullScreenFunction={() => toogleFullScreen(userMedia.id, media.type)}
+                                    fullScreenFunction={() => handleFullScreen(userMedia.id, media.type)}
                                 />
                             });
                         })
@@ -243,7 +185,7 @@ function Chat() {
             >
                 <div className="relative">
                     <Row>
-                        {getMedias().map((userMedia, i) => {
+                        {mediaManager.getMedias().map((userMedia, i) => {
 
                             const isRoot = userMedia.isRoot;
                             const displayMedia = userMedia.medias[DISPLAY_TYPES.DISPLAY];
@@ -266,7 +208,7 @@ function Chat() {
                                     <Video 
                                         stream={displayMedia.stream} 
                                         width={200} 
-                                        fullScreenFunction={() => toogleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}
+                                        fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}
                                     />
                                 }
                                 <div className={`${!hasDisplay&&'relative'} ${hasDisplay&&'absolute bottom-0'}`}>
@@ -277,7 +219,7 @@ function Chat() {
                                         <Video 
                                             stream={userCamMedia.stream} 
                                             width={hasDisplay?75:200} 
-                                            fullScreenFunction={() => toogleFullScreen(userMedia.id, DISPLAY_TYPES.USER_CAM)}
+                                            fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.USER_CAM)}
                                         />
                                     }
                                     {
