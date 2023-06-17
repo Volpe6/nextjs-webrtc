@@ -125,9 +125,11 @@ class Connection extends Notifier {
         //verifica se o user stream ja foi definido e se possui o track especifico
         if(this.userStream && getTrackFromStream({mediaType, stream: this.userStream})) {
             track = getTrackFromStream({mediaType, stream: this.userStream});
-            // se for video. troca o estado atual do video(se ira mostra-lo ou nao). Caso falso mostra uma tela preta
+            // se for video. troca o estado atual do video(se ira mostra-lo ou nao)
             // se for audio, muta ou desmuta
-            /** se o display esta setado significa a tela esta sendo compartilhada, entao o compartilhamento é parado e a stream é definida como nula para q na proxima execuçao o compartilhamento seja executado novamrnte */
+            /** se o display esta setado significa a tela esta sendo compartilhada, 
+             * entao o compartilhamento é parado e a stream é definida como nula para 
+             * q na proxima execuçao o compartilhamento seja executado novamente */
             track.stop();
             this.userStream.removeTrack(track);
             if(requestNewTrack) {

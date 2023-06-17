@@ -436,7 +436,7 @@ export const ConnectionProvider = ({ children }) => {
             return;
         }
         if(userCamMode==='user') {
-            setUserCamMode({exact: 'environment'});
+            setUserCamMode('environment');
         } else {
             setUserCamMode('user');
         }
