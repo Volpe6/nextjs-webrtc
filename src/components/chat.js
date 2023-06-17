@@ -110,10 +110,15 @@ function Chat() {
         if(!stream) {
             stream = await toogleAudio();
         }
+        try {
+            stream = stream?new MediaStream([stream.getAudioTracks()[0]]):null;
+        } catch (error) {
+            stream = null;
+        }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_AUDIO, {
             type: DISPLAY_TYPES.USER_AUDIO,
             isFullScreen: false,
-            stream: stream?new MediaStream([stream.getAudioTracks()[0]]):null
+            stream: stream
         });
         setAudioStream(stream);
     }
@@ -123,10 +128,15 @@ function Chat() {
         if(!stream) {
             stream = await toogleCamera();
         }
+        try {
+            stream = stream?new MediaStream([stream.getVideoTracks()[0]]):null 
+        } catch (error) {
+            stream = null;
+        }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
             type: DISPLAY_TYPES.USER_CAM,
             isFullScreen: false,
-            stream: stream?new MediaStream([stream.getVideoTracks()[0]]):null
+            stream: stream
         });
     }
     
@@ -135,10 +145,15 @@ function Chat() {
         if(!stream) {
             stream = await toogleCameraMode();
         }
+        try {
+            stream = stream?new MediaStream([stream.getVideoTracks()[0]]):null; 
+        } catch (error) {
+            stream = null;
+        }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
             type: DISPLAY_TYPES.USER_CAM,
             isFullScreen: false,
-            stream: stream?new MediaStream([stream.getVideoTracks()[0]]):null
+            stream: stream
         });
     }
 
@@ -147,10 +162,15 @@ function Chat() {
         if(!stream) {
             stream = await toogleDisplay();
         }
+        try {
+            stream = stream?new MediaStream(stream.getTracks()):null; 
+        } catch (error) {
+            stream = null;
+        }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.DISPLAY, {
             type: DISPLAY_TYPES.DISPLAY,
             isFullScreen: false,
-            stream: stream?new MediaStream(stream.getTracks()):null
+            stream: stream
         });
     }
 

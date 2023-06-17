@@ -118,7 +118,7 @@ class Connection extends Notifier {
             }
             throw new Error(`nao foi fonecido o um tipo valido. Tipo fornecido: ${mediaType}`);
         }
-        const { mediaType, displayType, mediaConfig,  enabled } = opts;
+        const { mediaType, displayType, mediaConfig, requestNewTrack, enabled } = opts;
         const data = { mediaType: mediaType };
         let stream = this.userStream;
         let track = null;
@@ -127,7 +127,12 @@ class Connection extends Notifier {
             track = getTrackFromStream({mediaType, stream: this.userStream});
             // se for video. troca o estado atual do video(se ira mostra-lo ou nao). Caso falso mostra uma tela preta
             // se for audio, muta ou desmuta
-            track.enabled = !track.enabled;
+            /** se o display esta setado significa a tela esta sendo compartilhada, entao o compartilhamento é parado e a stream é definida como nula para q na proxima execuçao o compartilhamento seja executado novamrnte */
+            track.stop();
+            this.userStream.removeTrack(track);
+            if(requestNewTrack) {
+                track=null;
+            }
         }
         if(!track) {
             //se nao possui o track de video/audio ele é requisitado
@@ -179,6 +184,7 @@ class Connection extends Notifier {
             mediaType: 'audio',
             displayType: DISPLAY_TYPES.USER_AUDIO,
             mediaConfig: {audio: true},
+            requestNewTrack: false,
             enabled
         });
     }
@@ -188,12 +194,13 @@ class Connection extends Notifier {
      * Ao contrario do codigo do compartilhamento da tela, nesse caso tenta utilizar a stream ja existente 
      * so adicionando os track ausentes 
      */
-    async toogleCamera(opts={enabled:null, facingMode: 'user'}) {
-        const { enabled, facingMode } = opts;
+    async toogleCamera(opts={enabled:null, facingMode: 'user', requestNewTrack: false}) {
+        const { enabled, requestNewTrack, facingMode } = opts;
         return await this.toogleUserTrack({
             mediaType: 'video',
             displayType: DISPLAY_TYPES.USER_CAM,
             mediaConfig: {video: true, facingMode: facingMode},
+            requestNewTrack: requestNewTrack,
             enabled
         });
     }

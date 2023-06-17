@@ -122,7 +122,7 @@ const AudioSpectrum = ({ audioStream, visualizer='bar', useAudioTag=false }) => 
   return (
     <div>
       <audio ref={audioRef} autoPlay></audio>
-      <canvas ref={canvasRef} className='w-full h-full' />
+      {audioStream&&<canvas ref={canvasRef} className='w-full h-full' />}
     </div>
   );
 };
