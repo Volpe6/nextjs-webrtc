@@ -239,22 +239,26 @@ function Chat() {
                                     displayMedia&&
                                     !displayMedia.isFullScreen&&
                                     displayMedia.stream&&
-                                    <Video 
-                                        stream={displayMedia.stream} 
-                                        width={200} 
-                                        fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}
-                                    />
+                                    <div className="min-w-[190px]">
+                                        <Video 
+                                            stream={displayMedia.stream}
+                                            width={200} 
+                                            fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}
+                                        />
+                                    </div>
                                 }
                                 <div className={`${!hasDisplay&&'relative'} ${hasDisplay&&'absolute bottom-0'}`}>
                                     {
                                         userCamMedia&&
                                         !userCamMedia.isFullScreen&&
                                         userCamMedia.stream&&
-                                        <Video 
-                                            stream={userCamMedia.stream} 
-                                            width={hasDisplay?75:200} 
-                                            fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.USER_CAM)}
-                                        />
+                                        <div className={`${(!isRoot||!hasDisplay)&&'min-w-[190px] max-h-[110px]'}`}>
+                                            <Video 
+                                                stream={userCamMedia.stream} 
+                                                width={hasDisplay?75:200} 
+                                                fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.USER_CAM)}
+                                            />
+                                        </div>
                                     }
                                     {
                                         !isRoot&&
