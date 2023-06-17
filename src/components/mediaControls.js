@@ -9,7 +9,7 @@ import AudioSpectrum from "./audioSpectrum";
 
 function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, handleChat, children}) {
     return (
-        <Drag initialPosition={{x:0, y:'70%'}} render={props=>(
+        <Drag initialPosition={{x:0, y:'50%'}} render={props=>(
             <div 
                 className="absolute flex flex-col space-y-1"
                 style={{
@@ -19,6 +19,8 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
             >
                 <div className="flex space-x-1">
                     <div 
+                        onTouchStart={props.handleMouseDown}
+                        onTouchMove={props.handleMouseMove}
                         onMouseDown={props.handleMouseDown} 
                         onMouseMove={props.handleMouseMove}
                         className="bg-red-500 text-[2.5em] flex justify-center w-[50px]"

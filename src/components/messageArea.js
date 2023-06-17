@@ -96,7 +96,7 @@ function MessageArea() {
             </div>
             <div className="flex justify-center items-center p-4 bg-gradient-to-r from-pink-400 to-purple-500">
                 <div>
-                    <label for="file-input" className="text-2xl"><BsPaperclip/></label>
+                    <label htmlFor="file-input" className="text-2xl"><BsPaperclip/></label>
                     <input id="file-input" className="hidden" type="file" onChange={handleFile}/>
                 </div>
                 <input ref={textInput} onKeyDown={handleKeyPress} type="text" placeholder="Digite sua mensagem" className="rounded-l-full border border-gray-400 py-2 px-4 w-full focus:outline-none focus:shadow-outline" />
