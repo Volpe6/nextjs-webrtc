@@ -2,12 +2,11 @@ import { MdDragIndicator, MdOutlineScreenShare, MdOutlineStopScreenShare } from 
 import { BsCameraVideo, BsCameraVideoOff, BsChatLeftDots } from "react-icons/bs";
 import { BiMicrophone, BiMicrophoneOff } from "react-icons/bi";
 import Drag from "./drag";
-import Video from "./video";
-import useConnection from "@/hook/useConnection";
-import { useEffect, useState } from "react";
 import AudioSpectrum from "./audioSpectrum";
+import { getDevice, DEVINCE_TYPES } from '../utils/devinceDetector';
+import { MdOutlineCameraswitch } from "react-icons/md";
 
-function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, handleChat, children}) {
+function MediaControls({connection, audioStream, handleAudio, handleCam, handleDisplay, handleChat, handleCamMode, children}) {
     return (
         <Drag initialPosition={{x:0, y:'50%'}} render={props=>(
             <div 
@@ -37,6 +36,9 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                             <BsCameraVideo onClick={handleCam}/>
                             <MdOutlineScreenShare onClick={handleDisplay}/>
                             <BsChatLeftDots onClick={handleChat}/>
+                            {
+                                getDevice()===DEVINCE_TYPES.MOBILE&&<MdOutlineCameraswitch onClick={handleCamMode}/>
+                            }
                         </div>
                     </div>
                 </div>

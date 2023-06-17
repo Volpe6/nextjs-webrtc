@@ -24,6 +24,7 @@ export const ConnectionProvider = ({ children }) => {
     const [connections, setConnections] = useState([]);
     const [currConnection, setCurrConnection] = useState(null);
     const [subscribed, setSubscribed] = useState(false);
+    const [userCamMode, setUserCamMode] = useState('user');
 
     const [displayStream, setDisplayStream] = useState(null);
 
@@ -428,6 +429,19 @@ export const ConnectionProvider = ({ children }) => {
         }
         return await currConnection.toogleCamera(opts);
     }
+    
+    const toogleCameraMode = async () => {
+        if(!currConnection) {
+            console.log('atuamente sem conexao');
+            return;
+        }
+        if(userCamMode==='user') {
+            setUserCamMode({exact: 'environment'});
+        } else {
+            setUserCamMode('user');
+        }
+        return await currConnection.toogleCamera({enabled:null, facingMode: userCamMode});
+    }
 
     const toogleDisplay = async (opts) => {
         if(!currConnection) {
@@ -485,6 +499,7 @@ export const ConnectionProvider = ({ children }) => {
             fileManager,
             mediaManager,
             displayStream,
+            toogleCameraMode,
             connectSocket,
             createConnection,
             handleCurrentConnection,

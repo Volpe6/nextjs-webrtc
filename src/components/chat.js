@@ -13,7 +13,7 @@ function Chat() {
     const [audioStream, setAudioStream] = useState(null);
 
     const { user } = useAuth();
-    const { currConnection: conn, mediaManager, fileManager, toogleDisplay, toogleCamera, toogleAudio } = useConnection();
+    const { currConnection: conn, mediaManager, fileManager, toogleDisplay, toogleCamera, toogleAudio, toogleCameraMode } = useConnection();
 
     useEffect(() => {
         mediaManager.resetMedias();
@@ -129,6 +129,18 @@ function Chat() {
             stream: stream?new MediaStream([stream.getVideoTracks()[0]]):null
         });
     }
+    
+    const handleCamMode = async (event, streams=null) => {
+        let stream = streams;
+        if(!stream) {
+            stream = await toogleCameraMode();
+        }
+        mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
+            type: DISPLAY_TYPES.USER_CAM,
+            isFullScreen: false,
+            stream: stream?new MediaStream([stream.getVideoTracks()[0]]):null
+        });
+    }
 
     const handleDisplay = async (event, streams=null) => {
         let stream = streams;
@@ -182,6 +194,7 @@ function Chat() {
                 handleCam={handleCam}
                 handleDisplay={handleDisplay}
                 handleChat={handleChat}
+                handleCamMode={handleCamMode}
             >
                 <div className="relative">
                     <Row>
