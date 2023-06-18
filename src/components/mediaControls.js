@@ -34,18 +34,18 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                         <div className="relative text-[1.5em] flex items-center justify-center w-full space-x-4 bg-slate-600 shadow-md p-2">
                             {
                                 connection.userStream&&connection.userStream.getAudioTracks().length>0?
-                                <BiMicrophoneOff onClick={handleAudio}/>:
-                                <BiMicrophone onClick={handleAudio}/>
+                                <BiMicrophone onClick={handleAudio}/>:
+                                <BiMicrophoneOff onClick={handleAudio}/>
                             }
                             {
                                 connection.userStream&&connection.userStream.getVideoTracks().length>0?
-                                <BsCameraVideoOff onClick={handleCam}/>:
-                                <BsCameraVideo onClick={handleCam}/>
+                                <BsCameraVideo onClick={handleCam}/>:
+                                <BsCameraVideoOff onClick={handleCam}/>
                             }
                             {
-                                connection.displayStream&&connection.displayStream.getTracks().length>0?
-                                <MdOutlineStopScreenShare onClick={handleDisplay}/>:
-                                <MdOutlineScreenShare onClick={handleDisplay}/>
+                                (getDevice()!==DEVINCE_TYPES.MOBILE)&&(connection.displayStream&&connection.displayStream.getTracks().length>0)?
+                                <MdOutlineScreenShare onClick={handleDisplay}/>:
+                                <MdOutlineStopScreenShare onClick={handleDisplay}/>
                             }
                             <BsChatLeftDots onClick={handleChat}/>
                             {
