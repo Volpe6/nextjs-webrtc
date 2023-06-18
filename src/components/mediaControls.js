@@ -43,9 +43,11 @@ function MediaControls({connection, audioStream, handleAudio, handleCam, handleD
                                 <BsCameraVideoOff onClick={handleCam}/>
                             }
                             {
-                                (getDevice()!==DEVINCE_TYPES.MOBILE)&&(connection.displayStream&&connection.displayStream.getTracks().length>0)?
-                                <MdOutlineScreenShare onClick={handleDisplay}/>:
-                                <MdOutlineStopScreenShare onClick={handleDisplay}/>
+                                (getDevice()!==DEVINCE_TYPES.MOBILE)?
+                                ((connection.displayStream&&connection.displayStream.getTracks().length>0)?
+                                    <MdOutlineScreenShare onClick={handleDisplay}/>:
+                                    <MdOutlineStopScreenShare onClick={handleDisplay}/>):
+                                null
                             }
                             <BsChatLeftDots onClick={handleChat}/>
                             {
