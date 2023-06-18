@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useState } from 'react';
 import useAuth from '../hook/useAuth';
 import useConnection from '../hook/useConnection';
+import Image from 'next/image';
 
 function Login() {
   const { singUp } = useAuth();
@@ -15,34 +16,45 @@ function Login() {
   }
 
   return (
-    <div className="relative flex h-[100svh] w-screen flex-col bg-slate-50 md:items-center md:justify-center md:bg-transparent">
+    <div>
       <Head>
-        <title>colocar titulo</title>
+        <title>Meet</title>
+        <link rel="shortcut icon" href="/gierige_jakkals.svg" />
       </Head>
-      
-      <form
-        className="relative mt-24 space-y-8 rounded bg-slate-500 py-10 px-6 md:mt-0 md:max-w-md md:px-14"
-        onSubmit={handleSubmit}
-      >
-        <h1 className="text-4xl font-semibold">Junte-se a nós</h1>
-        <div className="space-y-4">
-          <label className="inline-block w-full">
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="userName"
-              className={`flex-grow w-full mr-2 rounded-md py-2 px-3 border border-gray-400 focus:outline-none focus:border-blue-500`}
-            />
-          </label>
+      <main className='relative bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 flex h-[100svh] flex-col items-center justify-center md:bg-transparent'>
+        <div className='flex items-center justify-center'>
+          <Image
+            src="/gierige_jakkals.svg"
+            width={100}
+            height={100}
+            alt="Picture of the author"
+          />
         </div>
-        <button
-          className="w-full rounded bg-green-600 py-3 font-semibold"
-          type="submit"
+        <form
+          className="space-y-8"
+          onSubmit={handleSubmit}
         >
-          inscrever-se
-        </button>
-      </form>
+          <h1 className="text-4xl text-center font-semibold">Junte-se a nós</h1>
+          <div className="space-y-4">
+            <label className="inline-block w-full">
+              <input
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="userName"
+                className={`flex-grow w-full mr-2 rounded-md py-2 px-3 border border-gray-400 focus:outline-none focus:border-blue-500`}
+              />
+            </label>
+          </div>
+          <button
+            className="w-full rounded bg-green-600 py-3 font-semibold"
+            type="submit"
+          >
+            inscrever-se
+          </button>
+        </form>
+      </main>
+      
     </div>
   )
 }

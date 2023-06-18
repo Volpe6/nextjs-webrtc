@@ -28,7 +28,7 @@ export default function Home() {
         <title>Meet</title>
         <meta name="description" content="Your virtual meet" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/gierige_jakkals.svg" />
       </Head>
       <main className="flex flex-row h-[100svh] overflow-hidden">
         <div className={`${(conn)?'hidden':'flex'} md:${(fullScreen)?'hidden':'flex'} flex-col justify-start w-full md:w-[500px] min-w-[300px] border-r border-gray-500`}>
