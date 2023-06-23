@@ -18,7 +18,11 @@ function Chat() {
     useEffect(() => {
         mediaManager.resetMedias();
         Object.values(conn.remoteStreams).forEach(media => {
-            //nessa parte eu limpo todas as midias locais
+            //TODO colocar inidicação que a midia esta sendo compartilhada em outra conversa
+            /*nessa parte eu limpo todas as midias locais. Importante: caso a midia exista(por ter compartilhado com uma conversa anterior),
+            ela continua existindo e sendo transmitida, apenas deixa de ser mostrado ao usuario, quando ele volta para a conversa com a qual 
+            estava compartilhando a midia ela é mostrada novamente
+            */
             mediaManager.update(`${user.name}-media`, media.type, {
                 type: media.type,
                 isFullScreen: false,
@@ -113,6 +117,7 @@ function Chat() {
         try {
             stream = stream?new MediaStream([stream.getAudioTracks()[0]]):null;
         } catch (error) {
+            console.error(error);
             stream = null;
         }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_AUDIO, {
@@ -131,6 +136,7 @@ function Chat() {
         try {
             stream = stream?new MediaStream([stream.getVideoTracks()[0]]):null 
         } catch (error) {
+            console.error(error);
             stream = null;
         }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
@@ -148,6 +154,7 @@ function Chat() {
         try {
             stream = stream?new MediaStream([stream.getVideoTracks()[0]]):null; 
         } catch (error) {
+            console.error(error);
             stream = null;
         }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.USER_CAM, {
@@ -165,6 +172,7 @@ function Chat() {
         try {
             stream = stream?new MediaStream(stream.getTracks()):null; 
         } catch (error) {
+            console.error(error);
             stream = null;
         }
         mediaManager.update(`${user.name}-media`, DISPLAY_TYPES.DISPLAY, {

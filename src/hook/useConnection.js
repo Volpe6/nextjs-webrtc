@@ -271,11 +271,16 @@ export const ConnectionProvider = ({ children }) => {
 
         function onIceCandidate(content) {
             const target = findConnection(content.name);
-            if(!target || !target.peer) {
-                console.log('recebeu uma icecandidato mas nao possui uma conexão rtc iniciada');
+            if(!target) {
+                console.log('recebeu uma icecandidato mas nao possui uma conexão com o usuario: ' + content.name);
                 return;
             }
-            console.log('setando icecandidate');
+            if(!target.peer) {
+                target.pendentIce.push(content.data);
+                console.log('Recebeu icecandidate, mas não possui objeto rtc iniciado');
+                return;
+            }
+            target.pendentIce.forEach(ice => target.peer.addIceCandidate(ice));
             target.peer.addIceCandidate(content.data);
         }
 
@@ -319,7 +324,6 @@ export const ConnectionProvider = ({ children }) => {
                 return;
             }
             console.log(`peer: ${content.name}. Pronto`);
-            target.peer.sendPendentIce();
         }
 
         socket.on('connect', onConnect);
@@ -371,10 +375,7 @@ export const ConnectionProvider = ({ children }) => {
         setTimeout(async () => await conn.tryConnect({userName:user.name}), 500);
     }
 
-    function handleCurrentConnection(conn) {
-        setCurrConnection(conn);
-    }
-
+    
     function addContact(opts) {
         const prevConn = findConnection(opts.targetName);
         if(prevConn) {
@@ -388,8 +389,52 @@ export const ConnectionProvider = ({ children }) => {
         
         setConnections([...connections, conn]);
     }
+    
+    function handleCurrentConnection(conn) {
+        toogleAudio({close:true});
+        setCurrConnection(conn);
+    }
 
+    async function toogleAudio(opts) {
+        if(!currConnection) {
+            console.log('atuamente sem conexao');
+            return;
+        }
+        return await currConnection.toogleAudio(opts);
+    }
 
+    async function toogleCamera(opts) {
+        if(!currConnection) {
+            console.log('atuamente sem conexao');
+            return;
+        }
+        return await currConnection.toogleCamera(opts);
+    }
+    
+    async function toogleCameraMode() {
+        if(!currConnection) {
+            console.log('atuamente sem conexao');
+            return;
+        }
+        let mode = userCamMode;
+        if(mode==='user') {
+            setUserCamMode('environment');
+            mode = 'environment';
+        } else {
+            setUserCamMode('user');
+            mode = 'user';
+        }
+        return await currConnection.toogleCamera({mediaConfig: {video: {facingMode: mode}}, requestNewTrack: true});
+    }
+
+    async function toogleDisplay(opts) {
+        if(!currConnection) {
+            console.log('atuamente sem conexao');
+            return;
+        }
+        return await currConnection.toogleDisplay(opts);
+    }
+    
     const connectSocket = async () => {
         /**
          * versel nao suporta web socket. pra resolver isso vou usar um server externo
@@ -412,46 +457,6 @@ export const ConnectionProvider = ({ children }) => {
         if(currConnection && currConnection.name === target) {
             setCurrConnection(null);
         }
-    }
-
-    const toogleAudio = async (opts) => {
-        if(!currConnection) {
-            console.log('atuamente sem conexao');
-            return;
-        }
-        return await currConnection.toogleAudio(opts);
-    }
-
-    const toogleCamera = async (opts) => {
-        if(!currConnection) {
-            console.log('atuamente sem conexao');
-            return;
-        }
-        return await currConnection.toogleCamera(opts);
-    }
-    
-    const toogleCameraMode = async () => {
-        if(!currConnection) {
-            console.log('atuamente sem conexao');
-            return;
-        }
-        let mode = userCamMode;
-        if(mode==='user') {
-            setUserCamMode('environment');
-            mode = 'environment';
-        } else {
-            setUserCamMode('user');
-            mode = 'user';
-        }
-        return await currConnection.toogleCamera({enabled:null, video: {facingMode: mode}, requestNewTrack: true});
-    }
-
-    const toogleDisplay = async (opts) => {
-        if(!currConnection) {
-            console.log('atuamente sem conexao');
-            return;
-        }
-        return await currConnection.toogleDisplay(opts);
     }
 
     const hangUp = (opts) => {

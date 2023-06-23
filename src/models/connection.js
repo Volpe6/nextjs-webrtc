@@ -20,6 +20,9 @@ class Connection extends Notifier {
         this.retries = 0;
         this.tryingConnect = false;
         this.closed = false;
+        
+        //a conexao pode receber candidatos ice sem o peer estar iniciado. Para evitar erros, eles sao armazenados e depois enviados ao peer
+        this.pendentIce = [];
 
         this.displayStream = null;//do local
         this.userStream = null;//do local
@@ -118,7 +121,17 @@ class Connection extends Notifier {
             }
             throw new Error(`nao foi fonecido o um tipo valido. Tipo fornecido: ${mediaType}`);
         }
-        const { mediaType, displayType, mediaConfig, requestNewTrack, enabled } = opts;
+        const config = Object.assign(
+            {
+                mediaType: 'audio',
+                displayType: DISPLAY_TYPES.USER_AUDIO,
+                mediaConfig: {audio: true},
+                requestNewTrack: false,
+                close: false
+            },
+            opts
+        );
+        const { mediaType, displayType, mediaConfig, requestNewTrack, close } = config;
         const data = { mediaType: mediaType };
         let stream = this.userStream;
         let track = null;
@@ -136,13 +149,10 @@ class Connection extends Notifier {
                 track=null;
             }
         }
-        if(!track) {
+        if(!track && !close) {
             //se nao possui o track de video/audio ele é requisitado
             stream = await this.getUserMedia(mediaConfig);
             track = getTrackFromStream({mediaType, stream: stream});
-        }
-        if(enabled) {
-            track.enabled = enabled;
         }
         data.stream = stream;
         if(!this.peer) {
@@ -161,7 +171,7 @@ class Connection extends Notifier {
             return stream;
         }
         const transceiver = this.peer.retriveTransceiver({ displayType });
-        if(!track.enabled) {
+        if(track && !track.enabled) {
             transceiver.sender.replaceTrack(null);
             /** codigo utilizado para notificar o outro lado q track foi parado. Apenas utilizar
              *  replaceTrack(null) nao notifica o outro lado, e é indistinguivel de um problema de internet */
@@ -169,10 +179,12 @@ class Connection extends Notifier {
             this.emit('changeuserstream', data);
             return stream;
         }
-        transceiver.direction = "sendrecv";
-        transceiver.sender.replaceTrack(track);
-        transceiver.sender.setStreams(stream);
-        this.emit('changeuserstream', data);
+        if(stream) {
+            transceiver.direction = "sendrecv";
+            transceiver.sender.replaceTrack(track);
+            transceiver.sender.setStreams(stream);
+            this.emit('changeuserstream', data);
+        }
         return stream;
     }
 
@@ -180,15 +192,17 @@ class Connection extends Notifier {
      * Compartilha o audio d usuario. Se o audio ja estiver sendo compartilhada para o compartilhamento.
      * tenta utilizar a stream ja existente so adicionando os track ausentes 
      */
-    async toogleAudio(opts={enabled:null}) {
-        const { enabled } = opts;
-        return await this.toogleUserTrack({
-            mediaType: 'audio',
-            displayType: DISPLAY_TYPES.USER_AUDIO,
-            mediaConfig: {audio: true},
-            requestNewTrack: false,
-            enabled
-        });
+    async toogleAudio(opts) {
+        const config = Object.assign(
+            {
+                mediaType: 'audio',
+                displayType: DISPLAY_TYPES.USER_AUDIO,
+                mediaConfig: {audio: true},
+                requestNewTrack: false,
+            },
+            opts
+        );
+        return await this.toogleUserTrack(config);
     }
 
     /**
@@ -196,19 +210,28 @@ class Connection extends Notifier {
      * Ao contrario do codigo do compartilhamento da tela, nesse caso tenta utilizar a stream ja existente 
      * so adicionando os track ausentes 
      */
-    async toogleCamera(opts={enabled:null, video: true, requestNewTrack: false}) {
-        const { enabled, requestNewTrack, video } = opts;
-        return await this.toogleUserTrack({
-            mediaType: 'video',
-            displayType: DISPLAY_TYPES.USER_CAM,
-            mediaConfig: {video: video},
-            requestNewTrack: requestNewTrack,
-            enabled
-        });
+    async toogleCamera(opts) {
+        const config = Object.assign(
+            {
+                mediaType: 'video',
+                displayType: DISPLAY_TYPES.USER_CAM,
+                mediaConfig: {video: true},
+                requestNewTrack: false,
+            },
+            opts
+        );
+        return await this.toogleUserTrack(config);
     }
 
     async toogleDisplay(opts={onended:null}) {
-        const { onended, enabled } = opts;
+        const config = Object.assign(
+            {
+                onended: null,
+                close: false
+            },
+            opts
+        );
+        const { onended, close } = config;
         const data = { mediaType: 'video' };
         if(this.displayStream) {
             /** se o display esta setado significa a tela esta sendo compartilhada, entao o compartilhamento é parado e a stream é definida como nula para q na proxima execuçao o compartilhamento seja executado novamrnte */
@@ -219,6 +242,10 @@ class Connection extends Notifier {
             data.stream = this.displayStream = null;
             this.emit('changedisplaystream', data);
             return this.displayStream;
+        }
+        if(close) {
+            /** caso seja para parar de enviar a stream, simplesmente nao deixa que o processamento abaixo ocorra */
+            return;
         }
         /** aqui ao inves de tentar reutiliza o stream é feita uma nova solicitaçao para o compartilhamento de tela */
         const stream = await this.getDisplayMedia();

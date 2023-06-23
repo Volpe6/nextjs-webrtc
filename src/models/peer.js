@@ -21,7 +21,7 @@ class Peer extends Notifier {
         this.makingOffer = false;
         this.ignoreOffer = false;
         this.clearingQueue = false;
-        this.iceCandidates = [];
+        this.pendentIce = [];
         this.isReady = false;//indica se ja recebeu a description
         /**
          * adicionei essa variavel para a quantidade de tentativas de negociaçao estavam acontecendo.
@@ -83,7 +83,7 @@ class Peer extends Notifier {
 
     close() {
         this.negotiationAttempts = 0;
-        this.iceCandidates = [];
+        this.pendentIce = [];
         this.isReady = false;
         try {
             if(this.channel && (this.channel.readyState !== 'closed' && this.channel.readyState !== 'closing')) {
@@ -119,20 +119,25 @@ class Peer extends Notifier {
 
     async addIceCandidate(candidate) {
         try {
-            // console.log('adicionado ice candidato')
-            await this.pc.addIceCandidate(candidate);
-            this.emit('info', `Peer ${this.name} >> ice candidato adicionado`);
+            /**
+             * A condição if (this.pc.remoteDescription && this.pc.remoteDescription.type) verifica se a descrição remota está presente 
+             * (this.pc.remoteDescription não é nula ou indefinida) e se o seu tipo está definido 
+             * (this.pc.remoteDescription.type é verdadeiro ou diferente de nulo). Essa verificação é útil para garantir que 
+             * a descrição remota tenha sido configurada antes de executar determinadas ações ou lógica no código.
+             */
+            if (this.pc.remoteDescription && this.pc.remoteDescription.type) {
+                await this.pc.addIceCandidate(candidate);
+                this.emit('info', `Peer ${this.name} >> ice candidato adicionado`);
+                return;
+            }
+            this.pendentIce.push(candidate);
+            this.emit('info', `Peer ${this.name} >> ice candidato pendente`);
         } catch (error) {
             if (!this.ignoreOffer) {
                 console.error(error);
                 this.emit('error', `Peer ${this.name} >> Failed to add icecandidate: ${error.toString()}`);
             }
         }
-    }
-
-    sendPendentIce() {
-        /**teria outra forma de fazer isso, usando o getStats e obtendo os ice. Da pra dar uma olahda no simple peer */
-        this.iceCandidates.forEach(candidate => this.emit('icecandidate', candidate));
     }
 
     send(data) {
@@ -267,6 +272,7 @@ class Peer extends Notifier {
         try {
             const { description, options } = opts;
             await this.pc.setRemoteDescription(description);
+            this._setPendentIce();
             const answer = await this.pc.createAnswer(options);
             this.emit('info', `Peer ${this.name} >> criada resposta`);
             await this.pc.setLocalDescription(answer);
@@ -284,6 +290,7 @@ class Peer extends Notifier {
         try {
             const { description } = opts;
             await this.pc.setRemoteDescription(description);
+            this._setPendentIce();
             this.isReady = true;
             this.emit('peerready');
         } catch (error) {
@@ -314,6 +321,11 @@ class Peer extends Notifier {
             console.error(error);
             this.emit('error', `Peer ${this.name} >> Failed to create session description(offer): ${error.toString()}`);
         }
+    }
+
+    _setPendentIce() {
+        this.pendentIce.forEach(ice => this.addIceCandidate(ice));
+        this.pendentIce = [];
     }
 
     _createDataChannel() {
@@ -391,11 +403,8 @@ class Peer extends Notifier {
 
     _onIceCandidate({candidate}) {
         if(candidate != null) {
-            if(this.isReady) {
-                //se ainda nao foi obtido todos os candidatos, envia os q faltam
-                this.emit('icecandidate', candidate);
-            }
-            this.iceCandidates.push(candidate);
+            //se ainda nao foi obtido todos os candidatos, envia os q faltam
+            this.emit('icecandidate', candidate);
             this.emit('info', `Peer ${this.name} >> ice candidates obeteined`);
             return;
         }
