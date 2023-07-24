@@ -109,6 +109,7 @@ class Connection extends Notifier {
     }
 
     async mediaForwarding() {
+        debugger;
         if(this.displayStream && this.displayStream.getVideoTracks()[0] && this.displayStream.getVideoTracks()[0].enabled) {
             this.toogleDisplay({resend:true});
         }
@@ -306,9 +307,7 @@ class Connection extends Notifier {
                 console.error(`toogleDisplay() error: ${e.toString()}`);
                 return;
             }
-        } else {
-            transceiver.direction = 'recvonly';
-        }
+        } 
         data.stream = stream;
         stream.getVideoTracks()[0].onended = () => {
             data.stream = this.displayStream = null;
@@ -323,6 +322,9 @@ class Connection extends Notifier {
             return stream;
         }
         const transceiver = this.peer.retriveTransceiver({ displayType: DISPLAY_TYPES.DISPLAY });
+        if(resend) {
+            transceiver.direction = 'recvonly';
+        }
         stream.getVideoTracks()[0].onended = () => {
             transceiver.sender.replaceTrack(null);
             transceiver.direction = 'recvonly';
