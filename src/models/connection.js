@@ -108,6 +108,18 @@ class Connection extends Notifier {
         return this.displayStream;
     }
 
+    async mediaForwarding() {
+        if(this.displayStream && this.displayStream.getVideoTracks()[0] && this.displayStream.getVideoTracks()[0].enabled) {
+            this.toogleDisplay({resend:true});
+        }
+        if(this.userStream && this.userStream.getVideoTracks()[0] && this.userStream.getVideoTracks()[0].enabled) {
+            this.toogleCamera({resend:true});
+        }
+        if(this.userStream && this.userStream.getAudioTracks()[0] && this.userStream.getAudioTracks()[0].enabled) {
+            this.toogleAudio({resend:true});
+        }
+    }
+
     async toogleUserTrack(opts) {
         function getTrackFromStream(opts) {
             const trackType = {
@@ -127,16 +139,17 @@ class Connection extends Notifier {
                 displayType: DISPLAY_TYPES.USER_AUDIO,
                 mediaConfig: {audio: true},
                 requestNewTrack: false,
+                resend: false,//reenvia o stream existente
                 close: false
             },
             opts
         );
-        const { mediaType, displayType, mediaConfig, requestNewTrack, close } = config;
+        const { mediaType, displayType, mediaConfig, resend, requestNewTrack, close } = config;
         const data = { mediaType: mediaType };
         let stream = this.userStream;
         let track = null;
         //verifica se o user stream ja foi definido e se possui o track especifico
-        if(this.userStream && getTrackFromStream({mediaType, stream: this.userStream})) {
+        if(!resend && this.userStream && getTrackFromStream({mediaType, stream: this.userStream})) {
             track = getTrackFromStream({mediaType, stream: this.userStream});
             // se for video. troca o estado atual do video(se ira mostra-lo ou nao)
             // se for audio, muta ou desmuta
@@ -149,9 +162,17 @@ class Connection extends Notifier {
                 track=null;
             }
         }
-        if(!track && !close) {
-            //se nao possui o track de video/audio ele é requisitado
-            stream = await this.getUserMedia(mediaConfig);
+        if(!resend && !track && !close) {
+            try {
+                //se nao possui o track de video/audio ele é requisitado
+                stream = await this.getUserMedia(mediaConfig);
+                if(!stream) {
+                    throw new Error('nao foi possivel recuperar a midia');
+                }
+            } catch (e) {
+                console.error(`toogleUserTrack() error: ${e.toString()}`);
+                return null;
+            }
             track = getTrackFromStream({mediaType, stream: stream});
         }
         data.stream = stream;
@@ -171,13 +192,17 @@ class Connection extends Notifier {
             return stream;
         }
         const transceiver = this.peer.retriveTransceiver({ displayType });
-        if(track && !track.enabled) {
+        if(!resend && track && !track.enabled) {
             transceiver.sender.replaceTrack(null);
+            //https://blog.mozilla.org/webrtc/rtcrtptransceiver-explored/
             /** codigo utilizado para notificar o outro lado q track foi parado. Apenas utilizar
              *  replaceTrack(null) nao notifica o outro lado, e é indistinguivel de um problema de internet */
             transceiver.direction = 'recvonly';
             this.emit('changeuserstream', data);
             return stream;
+        }
+        if(resend) {
+            transceiver.direction = 'recvonly';
         }
         if(stream) {
             transceiver.direction = "sendrecv";
@@ -215,7 +240,18 @@ class Connection extends Notifier {
             {
                 mediaType: 'video',
                 displayType: DISPLAY_TYPES.USER_CAM,
-                mediaConfig: {video: true},
+                mediaConfig: {
+                    video: {
+                        width: {
+                            ideal: 1280,
+                            min: 320
+                        },
+                        height: {
+                            ideal: 720,
+                            min:240
+                        }
+                    }
+                },
                 requestNewTrack: false,
             },
             opts
@@ -227,13 +263,24 @@ class Connection extends Notifier {
         const config = Object.assign(
             {
                 onended: null,
+                resend: false,//reenvia o stream existente sem criar um novo
+                mediaConfig: {
+                    video: {
+                        width: {
+                            ideal: 1280,
+                        },
+                        height: {
+                            ideal: 720,
+                        }
+                    }
+                },
                 close: false
             },
             opts
         );
-        const { onended, close } = config;
+        const { onended, mediaConfig, resend, close } = config;
         const data = { mediaType: 'video' };
-        if(this.displayStream) {
+        if(!resend && this.displayStream) {
             /** se o display esta setado significa a tela esta sendo compartilhada, entao o compartilhamento é parado e a stream é definida como nula para q na proxima execuçao o compartilhamento seja executado novamrnte */
             this.displayStream.getTracks().forEach(track => {
                 track.stop();
@@ -247,8 +294,21 @@ class Connection extends Notifier {
             /** caso seja para parar de enviar a stream, simplesmente nao deixa que o processamento abaixo ocorra */
             return;
         }
-        /** aqui ao inves de tentar reutiliza o stream é feita uma nova solicitaçao para o compartilhamento de tela */
-        const stream = await this.getDisplayMedia();
+        let stream = this.displayStream; 
+        if(!resend) {
+            try {
+                /** aqui ao inves de tentar reutiliza o stream é feita uma nova solicitaçao para o compartilhamento de tela */
+                stream = await this.getDisplayMedia(mediaConfig);
+                if(!stream) {
+                    throw new Error('nao foi possivel recuperar a midia');
+                }
+            } catch (e) {
+                console.error(`toogleDisplay() error: ${e.toString()}`);
+                return;
+            }
+        } else {
+            transceiver.direction = 'recvonly';
+        }
         data.stream = stream;
         stream.getVideoTracks()[0].onended = () => {
             data.stream = this.displayStream = null;

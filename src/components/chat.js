@@ -49,6 +49,7 @@ function Chat() {
 
     useEffect(() => {
         function onChangeTrack(conn, event) {
+            handleChat();
             Object.values(conn.remoteStreams).forEach(media => {
                 mediaManager.update(media.id, media.type, {
                     type: media.type,
@@ -202,10 +203,12 @@ function Chat() {
                             return medias.map(media => {
                                 if(!media) return;
                                 if(!media.isFullScreen) return;
-                                return <Video 
-                                    stream={media.stream} 
-                                    fullScreenFunction={() => handleFullScreen(userMedia.id, media.type)}
-                                />
+                                return <div onClick={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}>
+                                    <Video 
+                                        stream={media.stream} 
+                                        isFullScreen={true}
+                                    />
+                                </div>
                             });
                         })
                     }
@@ -248,11 +251,12 @@ function Chat() {
                                     !displayMedia.isFullScreen&&
                                     displayMedia.stream&&
                                     <div className="min-w-[190px]">
-                                        <Video 
-                                            stream={displayMedia.stream}
-                                            width={200} 
-                                            fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}
-                                        />
+                                        <div onClick={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}>
+                                            <Video 
+                                                stream={displayMedia.stream}
+                                                width={200}
+                                            />
+                                        </div>
                                     </div>
                                 }
                                 <div className={`${!hasDisplay&&'relative'} ${hasDisplay&&'absolute bottom-0'}`}>
@@ -261,11 +265,12 @@ function Chat() {
                                         !userCamMedia.isFullScreen&&
                                         userCamMedia.stream&&
                                         <div className={`${(!isRoot||!hasDisplay)&&'min-w-[190px]'}`}>
-                                            <Video 
-                                                stream={userCamMedia.stream} 
-                                                width={hasDisplay?75:200} 
-                                                fullScreenFunction={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.USER_CAM)}
-                                            />
+                                            <div onClick={() => handleFullScreen(userMedia.id, DISPLAY_TYPES.DISPLAY)}>
+                                                <Video 
+                                                    stream={userCamMedia.stream} 
+                                                    width={hasDisplay?75:200} 
+                                                />
+                                            </div>
                                         </div>
                                     }
                                     {

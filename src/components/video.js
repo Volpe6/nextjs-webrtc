@@ -1,7 +1,7 @@
 const { useEffect, useRef } = require("react");
 import { BiExpand, BiCollapse } from "react-icons/bi";
 
-function Video({stream, width, fullScreenFunction}) {
+function Video({stream, width, isFullScreen=false}) {
     const videoRef = useRef(null);
 
     useEffect(() => {
@@ -23,12 +23,13 @@ function Video({stream, width, fullScreenFunction}) {
     }
 
     return (<>
-        <div className="relative" onClick={fullScreenFunction}>
+        <div className="relative">
             <div className="absolute text-[2em]">
                 <BiCollapse className="text-pink-600" />
             </div>
             <video 
                 ref={videoRef}
+                className={`${isFullScreen&&'h-[100svh]'}`}
                 onResize={handleResize} 
                 onLoadedMetadata={handleLoadMetadata} 
                 playsInline 

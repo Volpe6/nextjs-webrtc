@@ -30,6 +30,16 @@ function Message({ props }) {
         if(downloadProgress==100) return;
         fileUpload.abort();
     }
+
+    const processMessageContent = (message) =>{
+        const urlPattern = /(https?:\/\/[^\s]+)/g;
+        return message.replace(urlPattern, '<a href="$&" target="_blank">$&</a>');
+    }
+
+    function extractURLs(message) {
+        const urlPattern = /(https?:\/\/[^\s]+)/g;
+        return message.match(urlPattern);
+    }
     
     return (<>
         <div className={`flex ${sender? 'items-end justify-end':'items-start justify-start'}`}>

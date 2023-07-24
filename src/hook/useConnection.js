@@ -182,6 +182,10 @@ export const ConnectionProvider = ({ children }) => {
     
             track.onmute = () => {
                 conn.remoteStreams[displayType].stream = null;
+                socket.emit('medialoss', {
+                    name: conn.peer.name,
+                    target: conn.peer.target,
+                });
                 conn.emit('changetrack');
             };
 
@@ -246,8 +250,17 @@ export const ConnectionProvider = ({ children }) => {
             await connect({conn: conn});
         }
 
-        function onConnect() { console.log('conectado ao servidor de sinalização'); }
-        function onDisconnect() { console.log('desconectado do server de sinalização'); }
+        function onConnect() { 
+            if(user && !subscribed) {
+                socket.emit('subscribe', user.name);
+            }
+            console.log('conectado ao servidor de sinalização'); 
+        }
+
+        function onDisconnect() { 
+            setSubscribed(false);
+            console.log('desconectado do server de sinalização'); 
+        }
        
         function onSubscribed() { 
             setSubscribed(true);
@@ -326,6 +339,18 @@ export const ConnectionProvider = ({ children }) => {
             console.log(`peer: ${content.name}. Pronto`);
         }
 
+        function onMediaLoss(content) {
+            const target = findConnection(content.name);
+            if(!target || !target.peer) {
+                console.log('o par notificou q perdeu midia mas nao possui uma conexão rtc iniciada');
+                return;
+            }
+            console.log('par notificou q houve perda de midia')
+            target.mediaForwarding();
+        }
+
+        window.socket = socket;
+
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('negotiation', onNegotiation);
@@ -333,15 +358,12 @@ export const ConnectionProvider = ({ children }) => {
         socket.on('answer', onAnswer);
         socket.on('peerready', onPeerReady);
         socket.on('ice-candidate', onIceCandidate);
+        socket.on('medialoss', onMediaLoss);
         socket.on('subscribed', onSubscribed);
         socket.on('hangup', onHangup);
         /** utilizado para saber se o peer desse lado da conexao é o indelicado ou nao em relaçao a conexao q se deseja ser estabelecida. 
          * Essa informaçao so é retornada para o lado q requisitou, o par de comparaçao não é notificado*/
         socket.on('polite', onPolite);
-
-        if(user && !subscribed) {
-            socket.emit('subscribe', user.name);
-        }
 
         return () => {
             socket.off('connect', onConnect);
@@ -351,11 +373,12 @@ export const ConnectionProvider = ({ children }) => {
             socket.off('answer', onAnswer);
             socket.off('peerready', onPeerReady);
             socket.off('ice-candidate', onIceCandidate);
+            socket.off('medialoss', onMediaLoss);
             socket.off('subscribed', onSubscribed);
             socket.off('hangup', onHangup);
             socket.off('polite', onPolite);
         };
-    }, [socket, user, connections]);
+    }, [socket, user, connections, subscribed]);
 
     function createConnection(opts) {
         socket.emit('polite', {name: user.name, target: opts.targetName});
