@@ -291,16 +291,7 @@ class Connection extends Notifier {
                 mediaType: 'video',
                 displayType: DISPLAY_TYPES.USER_CAM,
                 mediaConfig: {
-                    video: {
-                        width: {
-                            ideal: 1280,
-                            min: 320
-                        },
-                        height: {
-                            ideal: 720,
-                            min:240
-                        }
-                    }
+                    video: true
                 },
                 requestNewTrack: false,
             },
@@ -315,14 +306,7 @@ class Connection extends Notifier {
                 onended: null,
                 resend: false,//reenvia o stream existente sem criar um novo
                 mediaConfig: {
-                    video: {
-                        width: {
-                            ideal: 1280,
-                        },
-                        height: {
-                            ideal: 720,
-                        }
-                    }
+                    video: true
                 },
                 close: false
             },
