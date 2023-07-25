@@ -179,16 +179,14 @@ export const ConnectionProvider = ({ children }) => {
                         break;
                 }
             }
-    
-            track.onmute = () => {
-                conn.remoteStreams[displayType].stream = null;
+
+            track.onended = () => {
                 socket.emit('medialoss', {
                     name: conn.peer.name,
                     target: conn.peer.target,
                 });
-                conn.emit('changetrack');
             };
-
+    
             conn.remoteStreams[displayType].stream = finalStream;
             conn.emit('changetrack');
         }

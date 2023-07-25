@@ -20,6 +20,7 @@ class Connection extends Notifier {
         this.retries = 0;
         this.tryingConnect = false;
         this.closed = false;
+        this.checkStatusIntervalId = null;
         
         //a conexao pode receber candidatos ice sem o peer estar iniciado. Para evitar erros, eles sao armazenados e depois enviados ao peer
         this.pendentIce = [];
@@ -108,8 +109,54 @@ class Connection extends Notifier {
         return this.displayStream;
     }
 
+    async checkMediaStatus() {
+        const endTrack = (type) => {
+            let stream = this.remoteStreams[type].stream;
+            if(!stream) {
+                return;
+            }
+            stream.getTracks().forEach(track => {
+                track.onended();
+            });
+            stream = null;
+            this.remoteStreams[type].stream = stream;
+            this.emit('changetrack');
+        }
+        if(this.checkStatusIntervalId) {
+            clearInterval(this.checkStatusIntervalId);
+        }
+        this.checkStatusIntervalId = setInterval(() => {
+            if(!this.peer.pc) {
+                return;
+            }
+            this.peer.pc.getStats().then(stats => {
+                stats.forEach(report => {
+                    if(report.type !== 'inbound-rtp') {
+                        return;
+                    }
+                    if (report.mediaType === 'video') {
+                        const framesPerSecond = report.framesPerSecond;
+                        const mid = report.mid;
+                        if(!framesPerSecond) {
+                            const trv = this.peer.retriveTransceiver({displayType: DISPLAY_TYPES.DISPLAY});
+                            const isDisplayStream = mid == trv.mid;
+                            endTrack(isDisplayStream?DISPLAY_TYPES.DISPLAY:DISPLAY_TYPES.USER_CAM);
+                        }
+                    }
+                    if (report.mediaType === 'audio') {
+                        const audioLevel = report.audioLevel;
+                        if(audioLevel === 0) {
+                            endTrack(DISPLAY_TYPES.USER_AUDIO);
+                        }
+                    }
+                });
+            }).catch(error => {
+                console.error('Erro ao obter estatísticas:', error);
+            });
+        }, 1000);
+    }
+
     async mediaForwarding() {
-        debugger;
         if(this.displayStream && this.displayStream.getVideoTracks()[0] && this.displayStream.getVideoTracks()[0].enabled) {
             this.toogleDisplay({resend:true});
         }
@@ -150,17 +197,19 @@ class Connection extends Notifier {
         let stream = this.userStream;
         let track = null;
         //verifica se o user stream ja foi definido e se possui o track especifico
-        if(!resend && this.userStream && getTrackFromStream({mediaType, stream: this.userStream})) {
+        if(this.userStream && getTrackFromStream({mediaType, stream: this.userStream})) {
             track = getTrackFromStream({mediaType, stream: this.userStream});
             // se for video. troca o estado atual do video(se ira mostra-lo ou nao)
             // se for audio, muta ou desmuta
             /** se o display esta setado significa a tela esta sendo compartilhada, 
              * entao o compartilhamento é parado e a stream é definida como nula para 
              * q na proxima execuçao o compartilhamento seja executado novamente */
-            track.stop();
-            this.userStream.removeTrack(track);
-            if(requestNewTrack) {
-                track=null;
+            if(!resend) {
+                track.stop();
+                this.userStream.removeTrack(track);
+                if(requestNewTrack) {
+                    track=null;
+                }
             }
         }
         if(!resend && !track && !close) {
@@ -373,11 +422,11 @@ class Connection extends Notifier {
                 id: PEER_ID,
                 obs:async (event, ...args) => {
                     const actions = {
-                        // datachannelopen: async (conn, _) => {
-                        //     if(this.peer.channel.readyState === 'open') {
-                        //         await this.toogleAudio({ enabled:true });
-                        //     }
-                        // },
+                        datachannelopen: async (conn, _) => {
+                            if(this.peer.channel.readyState === 'open') {
+                                this.checkMediaStatus();
+                            }
+                        },
                         // signalingstatechange: async (conn, state) => {
                         //     if(this.polite && state === 'have-remote-offer') {
                         //         await this.toogleAudio({ enabled:true });
